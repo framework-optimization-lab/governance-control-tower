@@ -147,7 +147,7 @@
 <!-- ============ ASK ============ -->
 <section class="page" id="page-ask">
   <h1>Governed assistant</h1>
-  <p class="lede">Retrieval is deterministic keyword search over a fictional operating playbook. If nothing is
+  <p class="lede">Retrieval is deterministic keyword search over a synthetic operating playbook. If nothing is
     relevant enough, the answer is refused <em>before</em> any drafting happens. Turn governance off to see the
     same question answered with confident, unsourced figures.</p>
   <p class="lede xs">In this self-contained build the drafting layer is <strong style="color:var(--fg)">extractive code, not a
@@ -227,7 +227,7 @@
 <section class="page" id="page-playbook">
   <h1>Playbook and evidence registry</h1>
   <p class="lede">Governance depends on a bounded corpus. The assistant may answer only from these passages, and
-    the gate rejects any citation that is not in the registry below. All content is fictional.</p>
+    the gate rejects any citation that is not in the registry below. All content is synthetic.</p>
   <div class="grid2">
     <div class="card"><h2 class="mono-label">Operating playbook</h2><div id="pbList"></div></div>
     <div class="card"><h2 class="mono-label">Evidence registry</h2>
@@ -267,7 +267,7 @@
   <div class="card">
     <h2 class="mono-label">Honest limits</h2>
     <ul class="plain sm mut">
-      <li>The playbook, evidence registry and figures are fictional demonstration data.</li>
+      <li>The playbook, evidence registry and figures are synthetic demonstration data.</li>
       <li>Retrieval is keyword-based, not semantic — chosen so refusals are explainable by a number.</li>
       <li>This build has no model: answers are assembled extractively from the retrieved passages, and the
           "ungoverned" baseline is a labeled simulation of what an unconstrained assistant does.</li>
@@ -295,7 +295,7 @@
    Drafting is extractive code; storage is localStorage.
    ============================================================ */
 
-/* ---------- data: fictional playbook + evidence registry ---------- */
+/* ---------- data: synthetic playbook + evidence registry ---------- */
 const PLAYBOOK = [
  {section:"1.1",title:"Purpose and Scope",body:"This playbook governs how the Platform Operations group intakes, decides, and delivers changes to shared services. It applies to every team that operates a production service, including vendor-managed services under an active support agreement. Where a team-level standard conflicts with this playbook, this playbook governs and the exception must be recorded in the Risk Register."},
  {section:"2.1",title:"Roles and Responsibilities",body:"The Service Owner is accountable for the operational health of a service and is the named approver for any change classified as high risk. The Delivery Lead sequences work and owns the release calendar. The Control Reviewer is an independent role that validates evidence before sign-off and may not review work they authored. Every decision recorded under this playbook must name exactly one accountable human."},
@@ -547,7 +547,7 @@ window.addEventListener("hashchange",route);
 
 /* ----- overview ----- */
 const STAGES=[
- ["01","Grounded retrieval","A deterministic BM25 search over a fictional operating playbook. Every answer is bounded by retrieved passages, and the top relevance score is recorded."],
+ ["01","Grounded retrieval","A deterministic BM25 search over a synthetic operating playbook. Every answer is bounded by retrieved passages, and the top relevance score is recorded."],
  ["02","Mandated refusal","If nothing relevant is retrieved, the system refuses before any drafting happens. Refusal is a control, not a failure."],
  ["03","Decision record","The answer is decomposed into claims, citations, a confidence tier, a risk level and disclosures — the artefact governance actually reviews."],
  ["04","Policy-as-code gate","Seven deterministic controls return PASS, REVIEW or BLOCK. The drafting layer proposes; the gate decides. Same input, same verdict, every time."],
