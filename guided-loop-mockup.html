@@ -1,0 +1,1021 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Governance Control Tower — AI governance you can run</title>
+<meta name="description" content="A runnable AI governance demo: grounded retrieval, mandated refusal, a seven-control policy gate, human sign-off, and an append-only audit trail. Fully self-contained — no backend, no model, no dependencies.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Governance Control Tower — AI governance you can run">
+<meta property="og:description" content="Grounded retrieval, mandated refusal, a seven-control policy gate returning PASS / REVIEW / BLOCK, human sign-off, and an append-only audit trail. One file — no backend, no model, no dependencies.">
+<meta property="og:url" content="https://framework-optimization-lab.github.io/governance-control-tower/">
+<meta property="og:image" content="https://framework-optimization-lab.github.io/governance-control-tower/og-card-v2.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Governance Control Tower — AI governance you can run">
+<meta name="twitter:image" content="https://framework-optimization-lab.github.io/governance-control-tower/og-card-v2.png">
+<style>
+  :root{
+    --bg:#151a3a; --card:#1c2248; --surface:#232a56; --border:#323a6b;
+    --fg:#eef0fb; --muted:#a2a9cf; --primary:#8fa0e8; --primary-deep:#151a3a;
+    --pass:#5fce8d; --review:#e8c05f; --block:#ee7d7d;
+    --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;line-height:1.55;}
+  a{color:var(--primary);text-decoration:none;}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 20px;}
+  header.top{position:sticky;top:0;z-index:20;background:rgba(21,26,58,.92);backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--border);}
+  .topbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 22px;padding:11px 20px;max-width:1100px;margin:0 auto;}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-weight:600;font-size:.92rem;color:var(--fg);}
+  .seal{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:var(--surface);
+    display:inline-flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:var(--primary);letter-spacing:.02em;}
+  .brand .dim{color:var(--muted);}
+  nav.pages{display:flex;flex-wrap:wrap;gap:2px;font-size:.9rem;}
+  nav.pages a{padding:6px 11px;border-radius:4px;color:var(--muted);}
+  nav.pages a:hover{background:var(--surface);color:var(--fg);}
+  nav.pages a.active{background:var(--surface);color:var(--fg);}
+  main{padding:36px 0 48px;}
+  .page{display:none;}
+  .page.on{display:block;}
+  h1{font-size:2rem;font-weight:650;letter-spacing:-.01em;margin:0 0 10px;}
+  .lede{max-width:none;color:var(--muted);font-size:.94rem;margin:0 0 8px;}
+  .mono-label{font-family:var(--mono);font-size:.7rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--primary);margin:0;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px;margin-top:16px;}
+  .card h2.mono-label{margin-bottom:4px;}
+  .hint{color:var(--muted);font-size:.85rem;margin:2px 0 12px;}
+  .grid2{display:grid;gap:16px;} @media(min-width:900px){.grid2{grid-template-columns:1.4fr 1fr;}}
+  .grid2e{display:grid;gap:16px;} @media(min-width:900px){.grid2e{grid-template-columns:1fr 1fr;}}
+  .grid3{display:grid;gap:14px;} @media(min-width:640px){.grid3{grid-template-columns:1fr 1fr;}}
+  @media(min-width:960px){.grid3{grid-template-columns:1fr 1fr 1fr;}}
+  .grid4{display:grid;gap:14px;grid-template-columns:1fr 1fr;} @media(min-width:900px){.grid4{grid-template-columns:repeat(4,1fr);}}
+  .chip{display:inline-block;border:1px solid var(--border);border-radius:4px;padding:7px 11px;font-size:.78rem;
+    color:var(--muted);background:transparent;cursor:pointer;text-align:left;font-family:inherit;}
+  .chip:hover{background:var(--surface);color:var(--fg);}
+  .chip.sel{border-color:var(--primary);background:var(--surface);color:var(--fg);}
+  .btn{display:inline-block;background:var(--primary);color:var(--primary-deep);border:none;border-radius:4px;
+    padding:10px 16px;font-size:.9rem;font-weight:650;cursor:pointer;font-family:inherit;}
+  .btn:disabled{opacity:.5;cursor:default;}
+  .btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--border);}
+  .btn.ghost:hover:not(:disabled){background:var(--surface);}
+  input[type=text],textarea,select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;
+    color:var(--fg);padding:9px 10px;font-size:.88rem;font-family:inherit;}
+  textarea{resize:vertical;}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--primary);}
+  .passage,.rowbox{border:1px solid var(--border);border-radius:5px;padding:12px;margin-top:10px;}
+  .mono-xs{font-family:var(--mono);font-size:.72rem;}
+  .mut{color:var(--muted);} .sm{font-size:.85rem;} .xs{font-size:.78rem;}
+  .badge{display:inline-block;border:1px solid;border-radius:4px;padding:4px 9px;font-family:var(--mono);
+    font-size:.72rem;font-weight:700;letter-spacing:.14em;}
+  .b-pass{color:var(--pass);border-color:var(--pass);background:rgba(95,206,141,.08);}
+  .b-review{color:var(--review);border-color:var(--review);background:rgba(232,192,95,.08);}
+  .b-block{color:var(--block);border-color:var(--block);background:rgba(238,125,125,.08);}
+  .t-pass{color:var(--pass);} .t-review{color:var(--review);} .t-block{color:var(--block);}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;}
+  .stat .v{font-family:var(--mono);font-size:1.5rem;font-weight:650;margin-top:6px;}
+  .stat .s{color:var(--muted);font-size:.75rem;margin-top:3px;}
+  .refbox{border:1px solid;border-radius:5px;padding:11px 13px;font-size:.8rem;margin-top:14px;}
+  .r-review{border-color:rgba(232,192,95,.4);background:rgba(232,192,95,.08);color:var(--review);}
+  .r-block{border-color:rgba(238,125,125,.4);background:rgba(238,125,125,.08);color:var(--block);}
+  .selfnote{display:inline-block;border:1px solid var(--border);border-radius:20px;background:var(--surface);
+    color:var(--muted);font-size:.75rem;padding:4px 13px;margin-bottom:14px;}
+  dl.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0 0;} @media(min-width:640px){dl.fields{grid-template-columns:repeat(4,1fr);}}
+  dl.fields dt{font-family:var(--mono);font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--primary);}
+  dl.fields dd{margin:3px 0 0;font-family:var(--mono);font-size:.85rem;}
+  label.f{display:block;} label.f .mono-label{display:block;margin-bottom:4px;}
+  .checks{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;} .checks label{display:flex;align-items:center;gap:7px;font-size:.85rem;cursor:pointer;}
+  footer.bottom{border-top:1px solid var(--border);padding:22px 20px;color:var(--muted);font-size:.78rem;}
+  footer.bottom .wrap{padding:0;}
+  .stage .n{font-family:var(--mono);font-size:.72rem;color:var(--primary);}
+  .stage h3{margin:7px 0 6px;font-size:.97rem;} .stage p{margin:0;font-size:.85rem;color:var(--muted);}
+  .hero{border-bottom:1px solid var(--border);padding-bottom:38px;}
+  .hero h1{font-size:2.5rem;max-width:720px;line-height:1.15;}
+  ul.plain{list-style:none;padding:0;margin:0;} ul.plain li{margin-top:9px;}
+  .audit-line{display:flex;flex-wrap:wrap;gap:9px;border-bottom:1px solid rgba(50,58,107,.6);padding:5px 0;font-family:var(--mono);font-size:.73rem;}
+  .govframe{border-left:3px solid var(--primary);background:var(--surface);border-radius:0 6px 6px 0;
+    padding:13px 17px;margin:20px 0 4px;}
+  .govframe .gq{font-family:var(--mono);font-size:.68rem;font-weight:700;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--primary);margin:0 0 5px;}
+  .govframe p{margin:0;font-size:.88rem;color:var(--fg);}
+  .qrow{display:flex;gap:14px;border-bottom:1px solid rgba(50,58,107,.6);padding:13px 0;align-items:baseline;}
+  .qrow:last-child{border-bottom:none;}
+  .qrow .qn{font-family:var(--mono);font-size:.95rem;font-weight:700;color:var(--primary);min-width:1.4em;}
+  .qrow .qt{font-weight:650;} .qrow .qd{color:var(--muted);font-size:.85rem;margin-top:3px;}
+  .qrow a.qlink{font-family:var(--mono);font-size:.75rem;white-space:nowrap;}
+  .tourbar{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--surface);
+    border-top:2px solid var(--primary);box-shadow:0 -8px 26px rgba(0,0,0,.4);}
+  .tb-in{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:13px 20px;max-width:1100px;margin:0 auto;}
+  .tb-step{font-family:var(--mono);font-size:.68rem;font-weight:700;letter-spacing:.12em;color:var(--primary);white-space:nowrap;}
+  .tb-text{flex:1;font-size:.85rem;color:var(--fg);min-width:260px;}
+  .tb-btns{display:flex;gap:8px;flex-wrap:wrap;}
+  .btn.sm{padding:7px 12px;font-size:.8rem;}
+  body.touring{padding-bottom:110px;}
+</style>
+</head>
+<body>
+
+<header class="top"><div class="topbar">
+  <a href="#/" class="brand"><span class="seal">TM</span><span>governance<span class="dim">/control-tower</span></span></a>
+  <nav class="pages" id="nav">
+    <a href="#/" data-page="overview">Overview</a>
+    <a href="#/ask" data-page="ask">Ask</a>
+    <a href="#/gate" data-page="gate">Gate</a>
+    <a href="#/review" data-page="review">Review</a>
+    <a href="#/dashboard" data-page="dashboard">Dashboard</a>
+    <a href="#/playbook" data-page="playbook">Playbook</a>
+    <a href="#/how" data-page="how">How it works</a>
+  </nav>
+</div></header>
+
+<main><div class="wrap">
+
+<!-- ============ OVERVIEW ============ -->
+<section class="page" id="page-overview">
+  <div class="hero">
+    <p class="mono-label">Unified demonstration · three repositories, one flow · self-contained build</p>
+    <h1>Governance you can run, not just describe.</h1>
+    <p class="lede">Most AI governance is a document. This is the same policy expressed as code you can
+      execute: ask a question, watch it get grounded or refused, then watch a deterministic gate
+      issue a verdict and route it to a human. Every step leaves evidence.</p>
+    <p class="lede">The machinery is the easy part. Governance is the set of questions the machinery must
+      answer — what the system is allowed to do, who decided, where a human must stand, and how you
+      prove it to someone who wasn't in the room. Every page here answers one of them, and the subject
+      of every answer is a person.</p>
+    <p class="lede" style="font-size:.83rem;">This edition is a <strong style="color:var(--fg)">single HTML file</strong> —
+      no backend, no build step, no external services, no model in the loop. Every behavior on every page is
+      deterministic code running in your browser. Open it from a file share or host it as one static page.</p>
+    <div style="margin-top:22px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn" id="tourBtn">Follow one answer through the loop</button>
+      <button class="btn ghost" id="simBtn">Simulate a production day</button>
+      <a class="btn ghost" href="#/ask">Run the governed assistant</a>
+      <a class="btn ghost" href="#/gate">Break the gate on purpose</a>
+    </div>
+    <p class="xs mut" style="margin-top:10px;">The 90-second version: ask → verdict → <em>your</em> sign-off → the audit trail. You play the human in the loop.
+      The production day streams ~200 decisions through the same gate — automation does the routine; you work the exceptions.</p>
+  </div>
+
+  <div class="grid3" style="margin-top:34px;" id="stages"></div>
+
+  <div class="card">
+    <h2 class="mono-label">The governance story — five questions, five answers</h2>
+    <p class="hint">Strip away the machinery and governance is five questions with named owners. Each page of
+      this demo exists to answer one of them.</p>
+    <div class="qrow"><span class="qn">1</span><span style="flex:1"><span class="qt">What is the system allowed to do?</span>
+      <div class="qd">A boundary a person chose: the assistant answers only from an approved playbook and a
+        registered evidence list — outside it, refusal is mandatory, not polite.</div></span>
+      <a class="qlink" href="#/playbook">Playbook →</a></div>
+    <div class="qrow"><span class="qn">2</span><span style="flex:1"><span class="qt">Who decided, and by what authority?</span>
+      <div class="qd">Decision authority lives in reviewable code and named roles — never in the drafting layer.
+        Every control traces to a function, a test, and a threshold a person set.</div></span>
+      <a class="qlink" href="#/how">How it works →</a></div>
+    <div class="qrow"><span class="qn">3</span><span style="flex:1"><span class="qt">What risk does each control manage?</span>
+      <div class="qd">Seven controls, each preventing a named failure: invented sources, unsourced figures,
+        false precision, high-risk calls with no owner.</div></span>
+      <a class="qlink" href="#/gate">Gate →</a></div>
+    <div class="qrow"><span class="qn">4</span><span style="flex:1"><span class="qt">Where must a human stand, and why there?</span>
+      <div class="qd">Where consequences land on people. Uncertain outputs stop for a named reviewer who signs
+        with a rationale; blocked outputs cannot be signed away by anyone.</div></span>
+      <a class="qlink" href="#/review">Review →</a></div>
+    <div class="qrow"><span class="qn">5</span><span style="flex:1"><span class="qt">How do you prove it to someone who wasn't in the room?</span>
+      <div class="qd">An append-only, attributable record generated by doing the work — the evidence an
+        assurance function asks for, not an afterthought.</div></span>
+      <a class="qlink" href="#/dashboard">Dashboard →</a></div>
+  </div>
+
+  <div class="card">
+    <h2 class="mono-label">What this is assembled from</h2>
+    <p class="hint">Two working repositories, joined into a single control surface.</p>
+    <ul class="plain sm mut">
+      <li><span class="mono-xs" style="color:var(--fg)">governed-playbook-assistant</span> — governance on the way in: retrieval, citation binding and refusal thresholds.</li>
+      <li><span class="mono-xs" style="color:var(--fg)">ai-decision-governance-gate</span> — governance on the way out: seven deterministic controls producing PASS / REVIEW / BLOCK.</li>
+      <li><span class="mono-xs" style="color:var(--fg)">framework-optimization-lab</span> — the framing: controls that are cheap to run and hard to argue with.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ ASK ============ -->
+<section class="page" id="page-ask">
+  <h1>Governed assistant</h1>
+  <p class="lede">Retrieval is deterministic keyword search over a synthetic operating playbook. If nothing is
+    relevant enough, the answer is refused <em>before</em> any drafting happens. Turn governance off to see the
+    same question answered with confident, unsourced figures.</p>
+  <p class="lede xs">In this self-contained build the drafting layer is <strong style="color:var(--fg)">extractive code, not a
+    model</strong> — answers are assembled from the retrieved passages themselves. The hosted edition swaps in a
+    language model for drafting; every control around it is identical.</p>
+  <div class="govframe"><p class="gq">Governance question 1 — what is this system allowed to do?</p>
+    <p>The boundary was set by a person, not learned by a model: the assistant may answer only from the
+      approved playbook, and below the relevance threshold it must refuse. The refusal happens before any
+      drafting — an unanswerable question never becomes a confident answer.</p></div>
+
+  <div class="card">
+    <label class="f" for="q"><span class="mono-label">Question</span></label>
+    <textarea id="q" rows="3"></textarea>
+    <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;" id="samples"></div>
+    <div style="margin-top:18px;display:flex;flex-wrap:wrap;align-items:center;gap:16px;">
+      <button class="btn" id="askBtn">Ask</button>
+      <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer;">
+        <input type="checkbox" id="governed" checked style="width:16px;height:16px;accent-color:var(--primary);">
+        <span id="govLabel">Governance ON</span>
+      </label>
+    </div>
+  </div>
+
+  <div id="askResult"></div>
+</section>
+
+<!-- ============ GATE ============ -->
+<section class="page" id="page-gate">
+  <h1>Policy-as-code gate</h1>
+  <p class="lede">The drafting layer proposes; the gate decides. Load a scenario, change any field, and watch the
+    verdict move. Nothing here is probabilistic — the same record always returns the same verdict.</p>
+  <div class="govframe"><p class="gq">Governance question 3 — what risk does each control manage?</p>
+    <p>Every control exists because of a way this could hurt someone: invented sources, unsourced figures,
+      false precision, a high-risk decision nobody owns. The gate doesn't enforce style — it prevents named
+      failures, and the same record always gets the same verdict, which is what makes it defensible.</p></div>
+  <div style="margin-top:22px;display:flex;flex-wrap:wrap;gap:8px;" id="recTabs"></div>
+  <p class="xs mut" id="recNote" style="margin-top:10px;"></p>
+  <div class="grid2e">
+    <div class="card" id="recEditor"></div>
+    <div class="card">
+      <h2 class="mono-label">Verdict</h2>
+      <div id="gateOut"><p class="sm mut">Run the gate to see all seven controls and the resulting verdict.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ REVIEW ============ -->
+<section class="page" id="page-review">
+  <h1>Review queue</h1>
+  <p class="lede">REVIEW is not a warning to be dismissed — it is a stop with a named owner. BLOCK never appears
+    here: a blocked output must be fixed at the source, not signed away.</p>
+  <div class="govframe"><p class="gq">Governance question 4 — where must a human stand, and why there?</p>
+    <p>Here — because this is where consequences land on people. A machine may propose, but an uncertain
+      output waits for a named person who signs with their name, their role, and their reasons. And some
+      things no signature can release: a BLOCK is fixed at the source, not approved away.</p></div>
+  <div class="card">
+    <h2 class="mono-label">Reviewer identity</h2>
+    <div class="grid2e" style="margin-top:10px;">
+      <input type="text" id="revName" placeholder="Your name">
+      <input type="text" id="revRole" placeholder="Your role, e.g. Service Owner">
+    </div>
+    <textarea id="revRationale" rows="3" style="margin-top:10px;" placeholder="Rationale — why is this safe to release, or why is it rejected?"></textarea>
+  </div>
+  <div id="reviewList"></div>
+</section>
+
+<!-- ============ DASHBOARD ============ -->
+<section class="page" id="page-dashboard">
+  <h1>Governance dashboard</h1>
+  <p class="lede">Everything below is generated by your own session — the same evidence an assurance function
+    would ask for. Nothing is pre-baked. Records live in this browser only.</p>
+  <div class="govframe"><p class="gq">Governance question 5 — how do you prove it to someone who wasn't in the room?</p>
+    <p>With a record you didn't have to reconstruct. Every decision below was written down as it happened —
+      attributable, append-only, downloadable. This is the difference between "we have standards" and
+      "we can show you."</p></div>
+  <div class="grid4" style="margin-top:24px;" id="stats"></div>
+  <div class="card">
+    <h2 class="mono-label">Decision trail</h2>
+    <div id="trail"></div>
+  </div>
+  <div class="card">
+    <h2 class="mono-label">Audit trail</h2>
+    <p class="hint">Append-only; newest first. Every step is attributable.</p>
+    <div id="audit"></div>
+    <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn ghost" id="dlAudit">Download audit trail (JSON)</button>
+      <button class="btn ghost" id="resetBtn">Reset demo data</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PLAYBOOK ============ -->
+<section class="page" id="page-playbook">
+  <h1>Playbook and evidence registry</h1>
+  <p class="lede">Governance depends on a bounded corpus. The assistant may answer only from these passages, and
+    the gate rejects any citation that is not in the registry below. All content is synthetic.</p>
+  <div class="govframe"><p class="gq">Governance question 1 — who decided what the system may know?</p>
+    <p>A person chose this corpus and registered this evidence — accountability starts with a boundary
+      someone owns. Notice the playbook's own rule: every decision it governs must name exactly one
+      accountable human. The system inherits its governance from the people who bound it.</p></div>
+  <div class="grid2">
+    <div class="card"><h2 class="mono-label">Operating playbook</h2><div id="pbList"></div></div>
+    <div class="card"><h2 class="mono-label">Evidence registry</h2>
+      <p class="hint">A citation outside this list is treated as fabrication.</p><div id="evList"></div></div>
+  </div>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section class="page" id="page-how">
+  <h1>How it works</h1>
+  <p class="lede">The split matters more than the stack: a drafting layer proposes prose, and deterministic
+    code decides. Every verdict in this demo is reproducible without a model in the loop — and in this
+    self-contained build, there is literally no model in the loop.</p>
+  <div class="govframe"><p class="gq">Governance question 2 — who decided, and by what authority?</p>
+    <p>Never the drafting layer. Authority lives in code a person can read, thresholds a person set, and
+      tests a person can run — which means every verdict can be challenged, reproduced, and owned. That is
+      what separates a governed system from a well-behaved one.</p></div>
+  <div class="grid2e">
+    <div class="card">
+      <h2 class="mono-label">What the drafting layer does</h2>
+      <ul class="plain sm mut">
+        <li>Composes prose from retrieved passages only.</li>
+        <li>In the hosted edition this is a language model under instruction; here it is extractive code.</li>
+        <li>It never assigns a verdict, tier, citation or risk level — in either edition.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2 class="mono-label">What deterministic code does</h2>
+      <ul class="plain sm mut">
+        <li>Ranks passages with BM25 and computes the relevance score.</li>
+        <li>Refuses below the threshold before any drafting happens.</li>
+        <li>Assigns citations, tiers, and the seven-control verdict.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card">
+    <h2 class="mono-label">Control map</h2>
+    <p class="hint">Each control traces to a function and a test in the source repositories.</p>
+    <div id="controlMap"></div>
+  </div>
+  <div class="card">
+    <h2 class="mono-label">Honest limits</h2>
+    <ul class="plain sm mut">
+      <li>The playbook, evidence registry and figures are synthetic demonstration data.</li>
+      <li>Retrieval is keyword-based, not semantic — chosen so refusals are explainable by a number.</li>
+      <li>This build has no model: answers are assembled extractively from the retrieved passages, and the
+          "ungoverned" baseline is a labeled simulation of what an unconstrained assistant does.</li>
+      <li>Records are stored in this browser only; there is no identity or access model here.</li>
+      <li>Seven controls are a demonstrable core, not a complete assurance framework.</li>
+    </ul>
+  </div>
+</section>
+
+</div></main>
+
+<footer class="bottom"><div class="wrap">
+  Synthetic demonstration data. Built on the public repositories
+  <span class="mono-xs">ai-decision-governance-gate</span> and
+  <span class="mono-xs">governed-playbook-assistant</span>.
+  Self-contained edition — one HTML file, no backend, no model, no external dependencies.
+</div></footer>
+
+<script>
+"use strict";
+/* ============================================================
+   Governance Control Tower — self-contained edition.
+   Deterministic ports of gate.ts (7 controls), retrieval.ts
+   (BM25 + tiers) and samples.ts from ai-governance-explorer.
+   Drafting is extractive code; storage is localStorage.
+   ============================================================ */
+
+/* ---------- data: synthetic playbook + evidence registry ---------- */
+const PLAYBOOK = [
+ {section:"1.1",title:"Purpose and Scope",body:"This playbook governs how the Platform Operations group intakes, decides, and delivers changes to shared services. It applies to every team that operates a production service, including vendor-managed services under an active support agreement. Where a team-level standard conflicts with this playbook, this playbook governs and the exception must be recorded in the Risk Register."},
+ {section:"2.1",title:"Roles and Responsibilities",body:"The Service Owner is accountable for the operational health of a service and is the named approver for any change classified as high risk. The Delivery Lead sequences work and owns the release calendar. The Control Reviewer is an independent role that validates evidence before sign-off and may not review work they authored. Every decision recorded under this playbook must name exactly one accountable human."},
+ {section:"3.1",title:"Intake and Triage",body:"All work enters through a single intake queue and is triaged within two business days. Triage assigns a service, an impact class, and an initial risk level of low, moderate, or high. Items that cannot be assigned a service owner within five business days are closed and returned to the requester with a written reason."},
+ {section:"4.2",title:"Incident Response",body:"An incident is declared by any on-call engineer who observes customer-visible degradation. The declaring engineer becomes the Incident Commander until formally handed off. Communications go out on a fixed cadence: an initial notice within fifteen minutes of declaration, then updates every thirty minutes until mitigation. A written post-incident review is required within five business days for every Sev-1 and Sev-2 incident."},
+ {section:"4.3",title:"Severity Levels",body:"Sev-1 means complete loss of a customer-facing capability with no workaround; it must be escalated immediately to the Service Owner and the duty executive. Sev-2 means significant degradation or a workaround that materially burdens customers; it is escalated to the Service Owner within one hour. Sev-3 means limited impact with a documented workaround and is handled in the normal queue. Severity is set by the Incident Commander and may only be lowered with Service Owner agreement."},
+ {section:"5.1",title:"Change Management",body:"Every production change carries a change record naming the requester, the reviewer, the rollback plan, and the verification step. Changes are grouped into standard, normal, and emergency classes. Standard changes are pre-approved patterns that require no additional sign-off. Emergency changes may proceed before review but require a retrospective record within one business day."},
+ {section:"5.2",title:"Release Sign-Off",body:"A release is signed off by the Service Owner for the affected service and by the Control Reviewer. Sign-off requires: a passing verification run, an approved rollback plan, and confirmation that no unresolved high-risk items are open against the release. Sign-off is recorded with a name, a role, and a timestamp. A release with a missing sign-off is treated as an unauthorized change."},
+ {section:"6.1",title:"Risk Register",body:"Risks are recorded with an owner, an impact rating, a likelihood rating, and a review date. High-impact risks are reviewed monthly; all others are reviewed quarterly. An accepted risk requires a named accepting owner at or above the Service Owner level, and acceptance expires after twelve months unless renewed in writing."},
+ {section:"7.1",title:"Data Handling",body:"Operational records are retained for twenty-four months and then deleted on a scheduled basis. Records containing personal information are stored only in approved systems and are never copied into working documents, tickets, or chat threads. Any suspected mishandling is treated as a Sev-2 incident until scoped."},
+ {section:"8.1",title:"Vendor and Third-Party Review",body:"A third-party service is reviewed before first production use and annually thereafter. The review covers support terms, incident notification commitments, data location, and exit path. A vendor without a documented exit path may not be used for a service classified as critical."},
+ {section:"9.1",title:"Metrics and Reporting",body:"The group reports four operational measures monthly: time to triage, change failure rate, mean time to mitigate, and the proportion of decisions with a complete evidence trail. Measures are reported as ranges with the underlying counts. A measure without a documented calculation method is not published."},
+];
+const EVIDENCE = [
+ {source_id:"EV-001",title:"Platform Operations Playbook v4",publisher:"Internal Operations Group",year:2025,description:"The governed operating playbook. The only document the assistant is permitted to answer from."},
+ {source_id:"EV-002",title:"Quarterly Operations Measures Summary",publisher:"Internal Operations Group",year:2025,description:"Aggregated ranges for triage time, change failure rate, and mitigation time. Counts included."},
+ {source_id:"EV-003",title:"Annual Third-Party Review Index",publisher:"Internal Vendor Management",year:2025,description:"Register of reviewed third-party services with review dates and exit-path status."},
+ {source_id:"EV-004",title:"Incident Post-Review Archive",publisher:"Internal Operations Group",year:2024,description:"Written post-incident reviews for Sev-1 and Sev-2 incidents, indexed by declaration date."},
+ {source_id:"EV-005",title:"Risk Register Extract",publisher:"Internal Risk Function",year:2025,description:"Open risks with owner, impact, likelihood, and acceptance expiry."},
+ {source_id:"EV-006",title:"Change Record Sample Set",publisher:"Internal Operations Group",year:2025,description:"Representative change records showing requester, reviewer, rollback plan, and verification step."},
+];
+const SAMPLE_QUESTIONS = [
+ "What are the severity levels, and who can lower a severity?",
+ "Who signs off on a release, and what does sign-off require?",
+ "How are risks recorded and how often are they reviewed?",
+ "What is the share price forecast for next quarter?",
+];
+
+/* ---------- retrieval: BM25, thresholds, tiers (port of retrieval.ts) ---------- */
+const STOP = new Set(["a","an","and","are","as","at","be","but","by","can","did","do","does","for","from","had","has","have","how","i","if","in","into","is","it","its","of","on","or","our","that","the","their","them","there","these","they","this","to","was","we","were","what","when","where","which","who","why","will","with","you","your"]);
+const REFUSAL_THRESHOLD = 1.0, HIGH_T = 6.0, MOD_T = 2.5;
+function tokenize(t){return t.toLowerCase().replace(/[^a-z0-9\s-]/g," ").split(/\s+/)
+  .map(x=>x.replace(/^-+|-+$/g,"")).filter(x=>x.length>2&&!STOP.has(x));}
+function rankPassages(query,docs,k=4){
+  const k1=1.5,b=0.75,qTerms=tokenize(query);
+  const docTokens=docs.map(d=>tokenize(d.title+" "+d.title+" "+d.body));
+  const lengths=docTokens.map(t=>t.length);
+  const avg=lengths.reduce((s,l)=>s+l,0)/Math.max(docs.length,1);
+  const scored=docs.map((d,i)=>{
+    const tokens=docTokens[i]||[],counts=new Map();
+    tokens.forEach(t=>counts.set(t,(counts.get(t)||0)+1));
+    let score=0;
+    for(const term of new Set(qTerms)){
+      const tf=counts.get(term)||0; if(!tf)continue;
+      const dwt=docTokens.filter(o=>o.includes(term)).length;
+      const idf=Math.log(1+(docs.length-dwt+0.5)/(dwt+0.5));
+      score+=idf*((tf*(k1+1))/Math.max(tf+k1*(1-b+(b*(lengths[i]||0))/Math.max(avg,1)),0.0001));
+    }
+    return {section:d.section,title:d.title,body:d.body,score:Math.round(score*100)/100};
+  });
+  return scored.filter(p=>p.score>0).sort((a,c)=>c.score-a.score).slice(0,k);
+}
+const passageLabel=p=>p.section+" "+p.title;
+function tierForScore(s){return s<REFUSAL_THRESHOLD?"Insufficient":s>=HIGH_T?"High":s>=MOD_T?"Moderate":"Low";}
+
+/* ---------- the seven-control gate (port of gate.ts) ---------- */
+const QUANT=/\d/, RANGE=/(\d[\d.,]*\s*(–|—|-|to)\s*\d)|±|approximately|roughly|between\s+\d/i;
+const CONTROL_CATALOG=[
+ {id:"provenance_binding",name:"Provenance binding",severity:"block",checks:"Every quantitative claim cites at least one source.",repoFile:"governance_gate.py :: check_provenance_binding",repoTest:"test_governance.py :: test_unsourced_figure_blocks"},
+ {id:"no_fabrication",name:"No fabrication",severity:"block",checks:"Every cited source exists in the evidence registry.",repoFile:"governance_gate.py :: check_no_fabrication",repoTest:"test_governance.py :: test_unknown_citation_blocks"},
+ {id:"refusal",name:"Mandated refusal",severity:"block",checks:"An Insufficient confidence tier produces no figures at all.",repoFile:"governance_gate.py :: check_refusal",repoTest:"test_governance.py :: test_should_have_refused_blocks"},
+ {id:"human_in_the_loop",name:"Human in the loop",severity:"block",checks:"High-risk decisions carry an explicit, named human sign-off.",repoFile:"governance_gate.py :: check_human_sign_off",repoTest:"test_governance.py :: test_high_risk_without_approver_blocks"},
+ {id:"calibrated_confidence",name:"Calibrated confidence",severity:"review",checks:"No single-number false precision under a Moderate or Low tier.",repoFile:"governance_gate.py :: check_calibration",repoTest:"test_governance.py :: test_false_precision_warns"},
+ {id:"tier_routing",name:"Confidence-tier routing",severity:"review",checks:"Moderate-confidence outputs route to expert review.",repoFile:"governance_gate.py :: check_tier_routing",repoTest:"test_governance.py :: test_moderate_tier_routes_to_review"},
+ {id:"disclosures",name:"Output disclosures",severity:"review",checks:"Confidence, sources, and review status are all stated.",repoFile:"governance_gate.py :: check_disclosures",repoTest:"test_governance.py :: test_missing_disclosure_warns"},
+];
+const DISCLOSURE_KEYS=["confidence","sources","review_status"];
+const trunc=(t,m=90)=>t.length>m?t.slice(0,m)+"…":t;
+function evaluateGate(record,allowedSources){
+  const allowed=new Set(allowedSources.map(s=>s.trim().toLowerCase()));
+  const qClaims=record.claims.filter(c=>QUANT.test(c.text));
+  const results=[];
+  const push=(id,passed,detail)=>{const s=CONTROL_CATALOG.find(c=>c.id===id);
+    results.push({id:s.id,name:s.name,severity:s.severity,passed,detail,repoFile:s.repoFile,repoTest:s.repoTest});};
+  const unsourced=qClaims.filter(c=>c.sourceIds.length===0);
+  push("provenance_binding",unsourced.length===0,
+    unsourced.length===0?qClaims.length+" quantitative claim(s) carry a source."
+    :'Unsourced figure: "'+trunc(unsourced[0].text)+'"');
+  const cited=[...new Set([...record.citations,...record.claims.flatMap(c=>c.sourceIds)])];
+  const unknown=cited.filter(s=>!allowed.has(s.trim().toLowerCase()));
+  push("no_fabrication",unknown.length===0,
+    unknown.length===0?(cited.length===0?"No sources cited, and none were required."
+    :"All "+cited.length+" cited source(s) exist in the registry.")
+    :'Citation not in the evidence registry: "'+unknown[0]+'"');
+  const shouldRefuse=record.confidenceTier==="Insufficient"&&qClaims.length>0;
+  push("refusal",!shouldRefuse,
+    shouldRefuse?"Confidence was Insufficient but the output still produced a figure."
+    :record.confidenceTier==="Insufficient"?"Insufficient tier correctly produced no figures."
+    :"Confidence tier is sufficient to answer.");
+  const needsApprover=record.riskLevel==="high";
+  const hasApprover=Boolean(record.approver&&record.approver.trim().length>1);
+  push("human_in_the_loop",!needsApprover||hasApprover,
+    needsApprover?(hasApprover?"Signed off by "+record.approver+" ("+(record.approverRole||"role not stated")+")."
+    :"High-risk decision carries no named approver.")
+    :"Risk level does not mandate explicit sign-off.");
+  const soft=record.confidenceTier==="Moderate"||record.confidenceTier==="Low";
+  const falsePrec=soft?qClaims.filter(c=>!RANGE.test(c.text)):[];
+  push("calibrated_confidence",falsePrec.length===0,
+    falsePrec.length===0?(soft?"Figures under a soft tier are expressed as ranges."
+    :"High tier — single figures are acceptable.")
+    :'False precision under a '+record.confidenceTier+' tier: "'+trunc(falsePrec[0].text)+'"');
+  push("tier_routing",record.confidenceTier!=="Moderate",
+    record.confidenceTier==="Moderate"?"Moderate confidence — routed to expert review before action."
+    :record.confidenceTier+" tier does not require routing.");
+  const missing=DISCLOSURE_KEYS.filter(k=>!record.disclosures.includes(k));
+  push("disclosures",missing.length===0,
+    missing.length===0?"Confidence, sources, and review status are all disclosed."
+    :"Missing disclosure(s): "+missing.join(", ")+".");
+  const blocked=results.some(r=>!r.passed&&r.severity==="block");
+  const flagged=results.some(r=>!r.passed&&r.severity==="review");
+  return {verdict:blocked?"BLOCK":flagged?"REVIEW":"PASS",controls:results};
+}
+const ALLOWED_SOURCES=[...EVIDENCE.map(e=>e.source_id),...PLAYBOOK.map(passageLabel)];
+
+/* ---------- sample decision records (port of samples.ts) ---------- */
+const SAMPLE_RECORDS=[
+ {label:"DEC-1001",expected:"PASS",note:"Sourced, tiered, ranged, human-approved, fully disclosed.",
+  record:{decisionRef:"DEC-1001",question:"What is our current change failure rate, and is it inside tolerance?",
+   answer:"Change failure rate for the last reported quarter sits in the 4–6% band across 812 recorded changes, which is inside the published tolerance. Escalation is not required.",
+   claims:[{text:"Change failure rate sits in the 4–6% band.",sourceIds:["EV-002"]},
+           {text:"The band covers 812 recorded changes.",sourceIds:["EV-002","EV-006"]},
+           {text:"The result is inside published tolerance.",sourceIds:["EV-002"]}],
+   citations:["EV-002","EV-006"],confidenceTier:"High",topRelevance:8.21,riskLevel:"moderate",
+   approver:"R. Okafor",approverRole:"Service Owner",disclosures:["confidence","sources","review_status"],
+   refused:false,refusalReason:null,governed:true}},
+ {label:"DEC-1002",expected:"REVIEW",note:"Moderate confidence — routed to expert review before action.",
+  record:{decisionRef:"DEC-1002",question:"Should we accept the open exit-path risk for the reporting vendor?",
+   answer:"The register shows the exit-path risk as open with an acceptance that expires within roughly 2–4 months. Evidence supports raising it for renewal rather than acting now.",
+   claims:[{text:"The exit-path risk is recorded as open.",sourceIds:["EV-005"]},
+           {text:"Acceptance expires in roughly 2–4 months.",sourceIds:["EV-005","EV-003"]}],
+   citations:["EV-005","EV-003"],confidenceTier:"Moderate",topRelevance:3.44,riskLevel:"moderate",
+   approver:"R. Okafor",approverRole:"Service Owner",disclosures:["confidence","sources","review_status"],
+   refused:false,refusalReason:null,governed:true}},
+ {label:"DEC-1003",expected:"BLOCK",note:"Unsourced figure + hallucinated citation + high risk with no sign-off.",
+  record:{decisionRef:"DEC-1003",question:"Can we retire the standby region this quarter?",
+   answer:"Retiring the standby region would reduce operational overhead by 31% with negligible availability impact, so it can proceed this quarter.",
+   claims:[{text:"Retiring the standby region reduces overhead by 31%.",sourceIds:[]},
+           {text:"Availability impact is negligible.",sourceIds:["EV-119"]}],
+   citations:["EV-119"],confidenceTier:"High",topRelevance:7.05,riskLevel:"high",
+   approver:null,approverRole:null,disclosures:["confidence","sources"],
+   refused:false,refusalReason:null,governed:true}},
+ {label:"DEC-1004",expected:"BLOCK",note:'Confidence was "Insufficient" but it produced a number anyway — it should have refused.',
+  record:{decisionRef:"DEC-1004",question:"What is the average customer sentiment score after an incident?",
+   answer:"Post-incident sentiment averages 72 points, which is a normal recovery profile.",
+   claims:[{text:"Post-incident sentiment averages 72 points.",sourceIds:["EV-004"]}],
+   citations:["EV-004"],confidenceTier:"Insufficient",topRelevance:0.0,riskLevel:"moderate",
+   approver:"R. Okafor",approverRole:"Service Owner",disclosures:["confidence","sources","review_status"],
+   refused:false,refusalReason:null,governed:true}},
+];
+
+/* ---------- drafting: extractive, deterministic (replaces the model) ---------- */
+function draftGoverned(question,passages){
+  const qTerms=new Set(tokenize(question));
+  const sentences=[];
+  passages.slice(0,2).forEach(p=>{
+    p.body.split(/(?<=[.!?])\s+/).forEach(s=>{
+      const overlap=tokenize(s).filter(t=>qTerms.has(t)).length;
+      if(s.trim().length>12)sentences.push({s:s.trim(),overlap,score:p.score});
+    });
+  });
+  const top=sentences.sort((a,b)=>b.overlap-a.overlap||b.score-a.score).slice(0,3)
+    .filter(x=>x.overlap>0);
+  if(!top.length)return "This is not covered in the playbook.";
+  return top.map(x=>x.s).join(" ");
+}
+function draftUngoverned(question){
+  let h=0;for(const ch of question)h=(h*31+ch.charCodeAt(0))>>>0;
+  const pct=7+(h%29), pts=40+(h%55);
+  return "Industry benchmarks put this at roughly "+pct+"% for comparable organizations, and internal signals "+
+    "suggest a score near "+pts+" is typical. On that basis you can proceed with confidence this quarter. "+
+    "(Simulated ungoverned baseline — this build has no model; this is what an unconstrained assistant sounds like: fluent, specific, and grounded in nothing.)";
+}
+function splitClaims(answer,citations){
+  return answer.split(/(?<=[.!?])\s+/).map(s=>s.trim()).filter(s=>s.length>12&&!s.startsWith("(Simulated"))
+    .map(s=>({text:s,sourceIds:citations}));
+}
+
+/* ---------- session store (localStorage; replaces the managed database) ---------- */
+const KEY="control-tower-session-v1";
+function store(){try{return JSON.parse(localStorage.getItem(KEY))||{records:[],audit:[]};}catch(e){return {records:[],audit:[]};}}
+function save(s){localStorage.setItem(KEY,JSON.stringify(s));}
+function audit(eventType,detail,recordId){
+  const s=store();
+  s.audit.push({id:"AE-"+(s.audit.length+1),recordId:recordId||null,eventType,detail,createdAt:new Date().toISOString()});
+  save(s);}
+function saveRecord(record){
+  const s=store();
+  const id="R-"+(s.records.length+1)+"-"+Math.random().toString(36).slice(2,8);
+  s.records.push({recordId:id,record,verdict:null,controls:[],review:null,createdAt:new Date().toISOString()});
+  save(s);return id;}
+function updateRecord(id,fn){const s=store();const it=s.records.find(r=>r.recordId===id);if(it)fn(it);save(s);}
+
+/* ---------- ask flow (port of engine.server.ts runAsk, model-free) ---------- */
+function runAsk(question,governed){
+  const passages=rankPassages(question,PLAYBOOK,4);
+  const topRelevance=passages[0]?passages[0].score:0;
+  const decisionRef="DEC-"+String(Date.now()).slice(-6);
+  let record;
+  if(governed&&topRelevance<REFUSAL_THRESHOLD){
+    record={decisionRef,question,answer:"This is not covered in the playbook.",claims:[],citations:[],
+      confidenceTier:"Insufficient",topRelevance,riskLevel:"moderate",approver:null,approverRole:null,
+      disclosures:["confidence","sources","review_status"],refused:true,
+      refusalReason:"No section of the playbook is sufficiently relevant to this question (top relevance "+
+        topRelevance.toFixed(2)+", below the refusal threshold of "+REFUSAL_THRESHOLD.toFixed(2)+").",governed:true};
+  }else{
+    const answer=governed?draftGoverned(question,passages):draftUngoverned(question);
+    const citations=governed?passages.slice(0,2).map(passageLabel):[];
+    const refusedByDraft=/not covered in the playbook/i.test(answer);
+    record={decisionRef,question,answer,claims:refusedByDraft?[]:splitClaims(answer,citations),citations,
+      confidenceTier:governed?tierForScore(topRelevance):"High",topRelevance:governed?topRelevance:0,
+      riskLevel:"moderate",approver:null,approverRole:null,
+      disclosures:governed?["confidence","sources","review_status"]:[],
+      refused:refusedByDraft,refusalReason:refusedByDraft?"The drafting layer found no supporting passage.":null,
+      governed};
+  }
+  const recordId=saveRecord(record);
+  audit(governed?"question_asked":"ungoverned_question_asked",
+    {question,top_relevance:topRelevance},recordId);
+  audit(record.refused?"refused_before_drafting":"answer_drafted",
+    {confidence_tier:record.confidenceTier,citations:record.citations,reason:record.refusalReason},recordId);
+  return {recordId,record,passages};
+}
+function runGateOn(recordId,record){
+  const gate=evaluateGate(record,ALLOWED_SOURCES);
+  updateRecord(recordId,it=>{it.verdict=gate.verdict;it.controls=gate.controls;});
+  audit("gate_evaluated",{verdict:gate.verdict,
+    failed:gate.controls.filter(c=>!c.passed).map(c=>c.id)},recordId);
+  return gate;
+}
+
+/* ============================ UI ============================ */
+const $=id=>document.getElementById(id);
+const esc=t=>String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const badge=v=>'<span class="badge b-'+v.toLowerCase()+'">'+v+"</span>";
+
+/* ----- router ----- */
+const PAGES={"":"overview","/":"overview","/ask":"ask","/gate":"gate","/review":"review","/dashboard":"dashboard","/playbook":"playbook","/how":"how"};
+function route(){
+  const hash=location.hash.replace(/^#/,"")||"/";
+  const page=PAGES[hash]||"overview";
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("on"));
+  $("page-"+page).classList.add("on");
+  document.querySelectorAll("#nav a").forEach(a=>a.classList.toggle("active",a.dataset.page===page));
+  if(page==="review")renderReview();
+  if(page==="dashboard")renderDashboard();
+  window.scrollTo(0,0);
+}
+window.addEventListener("hashchange",route);
+
+/* ----- overview ----- */
+const STAGES=[
+ ["01","Grounded retrieval","A deterministic BM25 search over a synthetic operating playbook. Every answer is bounded by retrieved passages, and the top relevance score is recorded."],
+ ["02","Mandated refusal","If nothing relevant is retrieved, the system refuses before any drafting happens. Refusal is a control, not a failure."],
+ ["03","Decision record","The answer is decomposed into claims, citations, a confidence tier, a risk level and disclosures — the artefact governance actually reviews."],
+ ["04","Policy-as-code gate","Seven deterministic controls return PASS, REVIEW or BLOCK. The drafting layer proposes; the gate decides. Same input, same verdict, every time."],
+ ["05","Human in the loop","REVIEW verdicts queue for a named sign-off with a written rationale. BLOCK cannot be signed away — it must be fixed at the source."],
+ ["06","Audit trail","Every question, refusal, verdict and sign-off is appended to an evidence log you can read end to end."],
+];
+$("stages").innerHTML=STAGES.map(([n,t,b])=>
+ '<div class="card stage" style="margin-top:0;"><p class="n">'+n+'</p><h3>'+t+"</h3><p>"+b+"</p></div>").join("");
+
+/* ----- ask page ----- */
+$("q").value=SAMPLE_QUESTIONS[0];
+$("samples").innerHTML=SAMPLE_QUESTIONS.map((s,i)=>
+ '<button class="chip" data-i="'+i+'">'+esc(s)+"</button>").join("");
+$("samples").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(b)$("q").value=SAMPLE_QUESTIONS[+b.dataset.i];});
+$("governed").addEventListener("change",()=>{
+  const on=$("governed").checked;
+  $("govLabel").textContent=on?"Governance ON":"Governance OFF (ungoverned baseline)";
+  $("govLabel").className=on?"":"t-block";});
+let currentAsk=null;
+$("askBtn").addEventListener("click",()=>{
+  const question=$("q").value.trim();
+  if(question.length<4)return;
+  currentAsk=runAsk(question,$("governed").checked);
+  renderAsk(null);
+});
+function renderAsk(gate){
+  if(!currentAsk){$("askResult").innerHTML="";return;}
+  const {record,passages}=currentAsk;
+  const fields='<dl class="fields">'+
+    '<div><dt>Confidence</dt><dd>'+record.confidenceTier+"</dd></div>"+
+    '<div><dt>Top relevance</dt><dd>'+record.topRelevance.toFixed(2)+"</dd></div>"+
+    '<div><dt>Risk</dt><dd>'+record.riskLevel+"</dd></div>"+
+    '<div><dt>Citations</dt><dd>'+record.citations.length+"</dd></div></dl>";
+  const cites=record.citations.length?
+    '<ul class="plain mono-xs" style="color:var(--primary);margin-top:12px;">'+
+      record.citations.map(c=>"<li>["+esc(c)+"]</li>").join("")+"</ul>"
+    :'<p class="mono-xs t-block" style="margin-top:12px;">No citations attached to this output.</p>';
+  const refusal=record.refused?
+    '<div class="refbox r-review">Refused as designed. '+esc(record.refusalReason)+" No drafting ran and no tokens would have been spent.</div>":"";
+  const sim=!record.governed?'<div class="refbox r-block">Ungoverned baseline (simulated in this build): no retrieval, no citations, no disclosures — and the figures trace to nothing.</div>':"";
+  const gateHtml=gate?
+    '<div class="card"><h2 class="mono-label">Gate verdict</h2><div style="margin-top:8px;">'+badge(gate.verdict)+"</div>"+
+    '<ul class="plain">'+gate.controls.map(c=>
+      '<li class="rowbox" style="display:flex;gap:12px;"><span class="'+(c.passed?"t-pass":c.severity==="block"?"t-block":"t-review")+'">'+(c.passed?"✓":"✕")+"</span>"+
+      '<span class="sm"><strong>'+c.name+'</strong><span class="xs mut" style="display:block;margin-top:2px;">'+esc(c.detail)+"</span></span></li>").join("")+"</ul></div>":"";
+  const passHtml=passages.length?
+    passages.map(p=>'<div class="passage"><p class="mono-xs" style="color:var(--primary);margin:0;">'+
+      p.section+" "+esc(p.title)+" · "+p.score.toFixed(2)+'</p><p class="xs mut" style="margin:8px 0 0;">'+esc(p.body)+"</p></div>").join("")
+    :'<p class="sm mut">Nothing scored above zero for this question.</p>';
+  $("askResult").innerHTML=
+   '<div class="grid2" style="margin-top:20px;">'+
+    '<div><div class="card" style="margin-top:0;"><h2 class="mono-label">Answer · '+record.decisionRef+"</h2>"+
+     '<p class="sm" style="margin-top:10px;">'+esc(record.answer)+"</p>"+refusal+sim+fields+cites+
+     '<button class="btn ghost" id="gateNow" style="margin-top:18px;">Send through the policy gate</button></div>'+gateHtml+"</div>"+
+    '<div class="card" style="margin-top:0;"><h2 class="mono-label">Retrieved passages</h2><p class="hint">Ranked by BM25 relevance.</p>'+passHtml+"</div></div>";
+  $("gateNow").addEventListener("click",()=>{
+    const g=runGateOn(currentAsk.recordId,currentAsk.record);renderAsk(g);});
+}
+
+/* ----- gate page ----- */
+let recIndex=0, rec=JSON.parse(JSON.stringify(SAMPLE_RECORDS[0].record)), lastGate=null;
+function renderRecTabs(){
+  $("recTabs").innerHTML=SAMPLE_RECORDS.map((s,i)=>
+   '<button class="chip'+(i===recIndex?" sel":"")+'" data-i="'+i+'"><span class="mono-xs">'+s.label+
+   '</span><span class="mut" style="margin-left:8px;">expects '+s.expected+"</span></button>").join("");
+  $("recNote").textContent=SAMPLE_RECORDS[recIndex].note;
+}
+$("recTabs").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  recIndex=+b.dataset.i;rec=JSON.parse(JSON.stringify(SAMPLE_RECORDS[recIndex].record));
+  lastGate=null;renderRecTabs();renderEditor();renderGateOut();});
+function renderEditor(){
+  $("recEditor").innerHTML=
+   '<h2 class="mono-label">Decision record</h2>'+
+   '<p class="sm" style="font-weight:600;margin:10px 0 0;">'+esc(rec.question)+"</p>"+
+   '<p class="sm mut" style="margin:8px 0 0;">'+esc(rec.answer)+"</p>"+
+   '<div class="grid2e" style="margin-top:18px;">'+
+    '<label class="f"><span class="mono-label">Confidence tier</span><select id="fTier">'+
+     ["High","Moderate","Low","Insufficient"].map(t=>'<option'+(rec.confidenceTier===t?" selected":"")+">"+t+"</option>").join("")+"</select></label>"+
+    '<label class="f"><span class="mono-label">Risk level</span><select id="fRisk">'+
+     ["low","moderate","high"].map(t=>'<option'+(rec.riskLevel===t?" selected":"")+">"+t+"</option>").join("")+"</select></label>"+
+    '<label class="f"><span class="mono-label">Named approver</span><input type="text" id="fAppr" value="'+esc(rec.approver||"")+'" placeholder="none"></label>'+
+    '<label class="f"><span class="mono-label">Approver role</span><input type="text" id="fRole" value="'+esc(rec.approverRole||"")+'" placeholder="none"></label>'+
+   "</div>"+
+   '<div style="margin-top:16px;"><span class="mono-label">Disclosures</span><div class="checks">'+
+    DISCLOSURE_KEYS.map(k=>'<label><input type="checkbox" data-k="'+k+'" class="fDisc"'+(rec.disclosures.includes(k)?" checked":"")+
+     ' style="width:15px;height:15px;accent-color:var(--primary);"><span class="mono-xs">'+k+"</span></label>").join("")+"</div></div>"+
+   '<div style="margin-top:16px;"><span class="mono-label">Claims and their sources</span>'+
+    rec.claims.map((c,i)=>'<div class="rowbox"><p class="xs" style="margin:0;">'+esc(c.text)+
+     '</p><input type="text" class="fClaim" data-i="'+i+'" value="'+esc(c.sourceIds.join(", "))+
+     '" placeholder="no sources" style="margin-top:8px;font-family:var(--mono);font-size:.75rem;"></div>').join("")+"</div>"+
+   '<label class="f" style="margin-top:16px;"><span class="mono-label">Record-level citations</span>'+
+    '<input type="text" id="fCites" value="'+esc(rec.citations.join(", "))+'" style="font-family:var(--mono);font-size:.75rem;"></label>'+
+   '<button class="btn" id="runGate" style="margin-top:20px;">Run the gate</button>';
+  $("fTier").addEventListener("change",e=>{rec.confidenceTier=e.target.value;lastGate=null;renderGateOut();});
+  $("fRisk").addEventListener("change",e=>{rec.riskLevel=e.target.value;lastGate=null;renderGateOut();});
+  $("fAppr").addEventListener("input",e=>{rec.approver=e.target.value||null;lastGate=null;});
+  $("fRole").addEventListener("input",e=>{rec.approverRole=e.target.value||null;lastGate=null;});
+  document.querySelectorAll(".fDisc").forEach(cb=>cb.addEventListener("change",e=>{
+    const k=e.target.dataset.k;
+    rec.disclosures=e.target.checked?[...rec.disclosures,k]:rec.disclosures.filter(x=>x!==k);lastGate=null;}));
+  document.querySelectorAll(".fClaim").forEach(inp=>inp.addEventListener("input",e=>{
+    rec.claims[+e.target.dataset.i].sourceIds=e.target.value.split(",").map(v=>v.trim()).filter(Boolean);lastGate=null;}));
+  $("fCites").addEventListener("input",e=>{
+    rec.citations=e.target.value.split(",").map(v=>v.trim()).filter(Boolean);lastGate=null;});
+  $("runGate").addEventListener("click",()=>{
+    const id=saveRecord(JSON.parse(JSON.stringify(rec)));
+    lastGate=runGateOn(id,rec);renderGateOut();});
+}
+function renderGateOut(){
+  if(!lastGate){$("gateOut").innerHTML='<p class="sm mut">Run the gate to see all seven controls and the resulting verdict.</p>';return;}
+  const g=lastGate;
+  const msg=g.verdict==="BLOCK"?"A blocking control failed. This output cannot be released, and no reviewer can wave it through."
+   :g.verdict==="REVIEW"?"Releasable only after a named human sign-off. It is queued on the Review page."
+   :"All controls satisfied. Cleared for use with its disclosures attached.";
+  $("gateOut").innerHTML=badge(g.verdict)+'<p class="xs mut" style="margin-top:10px;">'+msg+"</p>"+
+   '<ul class="plain">'+g.controls.map(c=>
+    '<li class="rowbox"><div style="display:flex;justify-content:space-between;gap:12px;">'+
+     '<span class="sm" style="font-weight:600;">'+c.name+'</span><span class="mono-xs '+
+     (c.passed?"t-pass":c.severity==="block"?"t-block":"t-review")+'">'+
+     (c.passed?"PASS":c.severity==="block"?"BLOCK":"REVIEW")+"</span></div>"+
+     '<p class="xs mut" style="margin:5px 0 0;">'+esc(c.detail)+"</p>"+
+     '<p class="mono-xs mut" style="margin:5px 0 0;opacity:.7;">'+c.repoFile+"</p></li>").join("")+"</ul>";
+}
+
+/* ----- review page ----- */
+function canSign(){return $("revName").value.trim().length>1&&$("revRole").value.trim().length>1&&$("revRationale").value.trim().length>3;}
+["revName","revRole","revRationale"].forEach(id=>$(id).addEventListener("input",renderReview));
+function renderReview(){
+  const s=store();
+  const queue=s.records.filter(r=>r.verdict==="REVIEW"&&!r.review);
+  const blocked=s.records.filter(r=>r.verdict==="BLOCK");
+  let html="";
+  if(!queue.length)html+='<p class="sm mut" style="margin-top:20px;">Nothing awaiting sign-off. Run a Moderate-confidence record through the gate to fill this queue.</p>';
+  else html+='<p class="sm mut" style="margin-top:20px;"><strong style="color:var(--fg)">'+queue.length+
+    '</strong> item(s) awaiting a named sign-off. In a production shop this is the exception lane — the gate cleared the routine work without you.</p>';
+  queue.forEach(item=>{
+    const fails=item.controls.filter(c=>!c.passed).map(c=>
+      '<li class="xs t-review">'+c.name+": "+esc(c.detail)+"</li>").join("");
+    html+='<div class="card"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;">'+
+     '<span class="mono-xs" style="color:var(--primary);">'+item.record.decisionRef+"</span>"+badge("REVIEW")+"</div>"+
+     '<p class="sm" style="font-weight:600;margin:12px 0 0;">'+esc(item.record.question)+"</p>"+
+     '<p class="sm mut" style="margin:8px 0 0;">'+esc(item.record.answer)+"</p>"+
+     '<ul class="plain" style="margin-top:10px;">'+fails+"</ul>"+
+     '<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">'+
+      '<button class="btn actApprove" data-id="'+item.recordId+'"'+(canSign()?"":" disabled")+">Approve with sign-off</button>"+
+      '<button class="btn ghost actReject" data-id="'+item.recordId+'"'+(canSign()?"":" disabled")+">Reject</button>"+
+      (canSign()?"":'<span class="xs mut">Name, role and rationale are required before signing.</span>')+"</div></div>";
+  });
+  if(blocked.length){
+    html+='<div class="card"><h2 class="mono-label">Blocked — not reviewable</h2>'+
+     '<p class="hint">Listed for transparency. These must be corrected upstream; a BLOCK cannot be signed away.</p>'+
+     blocked.map(item=>'<div class="rowbox" style="border-color:rgba(238,125,125,.4);background:rgba(238,125,125,.05);">'+
+      '<span class="mono-xs t-block">'+item.record.decisionRef+'</span><p class="xs mut" style="margin:4px 0 0;">'+
+      esc(item.record.question)+"</p></div>").join("")+"</div>";
+  }
+  $("reviewList").innerHTML=html;
+  document.querySelectorAll(".actApprove,.actReject").forEach(btn=>btn.addEventListener("click",e=>{
+    const id=e.target.dataset.id;
+    const action=e.target.classList.contains("actApprove")?"approved":"rejected";
+    updateRecord(id,it=>{it.review={action,reviewerName:$("revName").value.trim(),
+      reviewerRole:$("revRole").value.trim(),rationale:$("revRationale").value.trim(),at:new Date().toISOString()};});
+    audit(action==="approved"?"review_approved":"review_rejected",
+      {reviewer:$("revName").value.trim(),role:$("revRole").value.trim(),rationale:$("revRationale").value.trim()},id);
+    $("revRationale").value="";renderReview();
+  }));
+}
+
+/* ----- dashboard ----- */
+function renderDashboard(){
+  const s=store();
+  const items=s.records, evaluated=items.filter(i=>i.verdict);
+  const count=v=>evaluated.filter(i=>i.verdict===v).length;
+  const refusals=items.filter(i=>i.record.refused).length;
+  const signOffs=items.filter(i=>i.review).length;
+  const pct=(v,t)=>t===0?"—":Math.round(v/t*100)+"%";
+  const stat=(l,v,sub)=>'<div class="stat"><p class="mono-label">'+l+'</p><p class="v">'+v+'</p><p class="s">'+sub+"</p></div>";
+  $("stats").innerHTML=
+   stat("Decisions recorded",items.length,evaluated.length+" passed through the gate")+
+   stat("Cleared (PASS)",count("PASS"),pct(count("PASS"),evaluated.length))+
+   stat("Routed (REVIEW)",count("REVIEW"),signOffs+" signed off")+
+   stat("Stopped (BLOCK)",count("BLOCK"),pct(count("BLOCK"),evaluated.length))+
+   stat("Refusal rate",pct(refusals,items.length),refusals+" question(s) refused before drafting")+
+   stat("Sampled for QA",items.filter(i=>i.qaSample).length,"Auto-cleared decisions pulled for retrospective audit")+
+   stat("Audit events",s.audit.length,"Append-only; every step is attributable");
+  const TRAIL_CAP=60;
+  const trailNote=items.length>TRAIL_CAP?
+   '<p class="xs mut" style="margin-top:8px;">Showing the latest '+TRAIL_CAP+' of '+items.length+' decisions — the full set is in the JSON download.</p>':"";
+  $("trail").innerHTML=items.length===0?
+   '<p class="sm mut" style="margin-top:10px;">No decisions yet. Start on the Ask or Gate page.</p>':
+   trailNote+items.slice(-TRAIL_CAP).reverse().map(item=>
+    '<div class="rowbox"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">'+
+     '<span class="mono-xs" style="color:var(--primary);">'+item.record.decisionRef+"</span><span>"+
+     (!item.record.governed?'<span class="mono-xs t-block" style="margin-right:8px;">UNGOVERNED</span>':"")+
+     (item.verdict?badge(item.verdict):'<span class="mono-xs mut">NOT EVALUATED</span>')+"</span></div>"+
+     '<p class="sm" style="margin:8px 0 0;">'+esc(item.record.question)+"</p>"+
+     '<p class="xs mut" style="margin:4px 0 0;">'+item.record.confidenceTier+" confidence · relevance "+
+     item.record.topRelevance.toFixed(2)+" · "+item.record.citations.length+" citation(s)"+
+     (item.review?" · "+item.review.action+" by "+esc(item.review.reviewerName):"")+
+     (item.qaSample?' · <span class="t-review">QA SAMPLE</span>':"")+"</p></div>").join("");
+  const AUDIT_CAP=120;
+  const auditNote=s.audit.length>AUDIT_CAP?
+   '<p class="xs mut" style="margin-bottom:6px;">Showing the latest '+AUDIT_CAP+' of '+s.audit.length+' events — the full trail is in the JSON download.</p>':"";
+  $("audit").innerHTML=s.audit.length===0?'<p class="sm mut">No events yet.</p>':
+   auditNote+s.audit.slice(-AUDIT_CAP).reverse().map(ev=>
+    '<div class="audit-line"><span class="mut">'+new Date(ev.createdAt).toLocaleTimeString()+
+    '</span><span style="color:var(--primary);">'+ev.eventType+'</span><span class="mut">'+
+    esc(JSON.stringify(ev.detail))+"</span></div>").join("");
+}
+$("dlAudit").addEventListener("click",()=>{
+  const blob=new Blob([JSON.stringify(store(),null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download="control-tower-audit-trail.json";a.click();
+  URL.revokeObjectURL(a.href);});
+$("resetBtn").addEventListener("click",()=>{
+  if(confirm("Clear all demo records and audit events stored in this browser?")){
+    localStorage.removeItem(KEY);renderDashboard();}});
+
+/* ----- playbook page ----- */
+$("pbList").innerHTML=PLAYBOOK.map(p=>
+ '<div class="passage"><p class="mono-xs" style="color:var(--primary);margin:0;">'+p.section+" "+esc(p.title)+
+ '</p><p class="sm mut" style="margin:8px 0 0;">'+esc(p.body)+"</p></div>").join("");
+$("evList").innerHTML=EVIDENCE.map(e=>
+ '<div class="passage"><p class="mono-xs" style="color:var(--primary);margin:0;">'+e.source_id+
+ '</p><p class="sm" style="margin:4px 0 0;">'+esc(e.title)+'</p><p class="xs mut" style="margin:4px 0 0;">'+
+ esc(e.publisher)+", "+e.year+" — "+esc(e.description)+"</p></div>").join("");
+
+/* ----- how it works ----- */
+$("controlMap").innerHTML=CONTROL_CATALOG.map(c=>
+ '<div class="rowbox"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">'+
+  '<span class="sm" style="font-weight:600;">'+c.name+'</span><span class="mono-xs '+
+  (c.severity==="block"?"t-block":"t-review")+'">fails as '+c.severity.toUpperCase()+"</span></div>"+
+  '<p class="xs mut" style="margin:5px 0 0;">'+c.checks+"</p>"+
+  '<p class="mono-xs mut" style="margin:6px 0 0;opacity:.7;">'+c.repoFile+"</p>"+
+  '<p class="mono-xs mut" style="margin:2px 0 0;opacity:.7;">'+c.repoTest+"</p></div>").join("");
+
+/* ----- guided tour: follow one answer through the loop ----- */
+const TOUR_QUESTION="Should we accept the open exit-path risk for the reporting vendor?";
+let tour={step:0,recordId:null,ref:null,verdict:null,pollId:null};
+function tourStop(){
+  tour.step=0;if(tour.pollId){clearInterval(tour.pollId);tour.pollId=null;}
+  const el=$("tourbar");if(el)el.remove();document.body.classList.remove("touring");
+}
+function tourBar(step,text,btns){
+  let el=$("tourbar");
+  if(!el){el=document.createElement("div");el.id="tourbar";el.className="tourbar";document.body.appendChild(el);}
+  document.body.classList.add("touring");
+  el.innerHTML='<div class="tb-in"><span class="tb-step">'+step+'</span><span class="tb-text">'+text+
+    '</span><span class="tb-btns">'+btns+'</span></div>';
+}
+const exitBtn='<button class="btn ghost sm" id="tourExit">Exit tour</button>';
+function bindTour(){ const x=$("tourExit");if(x)x.addEventListener("click",tourStop);
+  const n=$("tourNext");if(n)n.addEventListener("click",tourAdvance); }
+function tourAdvance(){
+  if(tour.step===1){ /* run the gate on the tour record, stay on Ask so the verdict is visible */
+    const g=runGateOn(tour.recordId,currentAsk.record);renderAsk(g);tour.verdict=g.verdict;
+    tour.step=2;
+    tourBar("STEP 2 OF 4 · THE VERDICT",
+      tour.verdict==="REVIEW"
+      ?"The gate returned <strong>REVIEW</strong> — a Moderate-confidence answer may not act on its own. It is now queued for a named human. That queue is not a formality; it is the point."
+      :"The gate returned <strong>"+tour.verdict+"</strong>. Every control's reasoning is on screen — same record, same verdict, every time.",
+      '<button class="btn sm" id="tourNext">Meet the human →</button>'+exitBtn);
+    bindTour();window.scrollTo(0,0);return;
+  }
+  if(tour.step===2){ /* go to review; the human is the visitor */
+    tour.step=3;location.hash="#/review";
+    tourBar("STEP 3 OF 4 · THE HUMAN IS YOU",
+      "Item <span class='mono-xs' style='color:var(--primary)'>"+tour.ref+"</span> is waiting. Enter <em>your</em> name, <em>your</em> role, and your reasons — then approve or reject it. Nothing proceeds until you decide. This is what human-in-the-loop means: a named person, with authority, on the record.",
+      exitBtn);
+    bindTour();
+    tour.pollId=setInterval(()=>{
+      const it=store().records.find(r=>r.recordId===tour.recordId);
+      if(it&&it.review){clearInterval(tour.pollId);tour.pollId=null;tour.step=4;
+        location.hash="#/dashboard";
+        tourBar("STEP 4 OF 4 · THE PROOF",
+          "Done — you just "+it.review.action+" "+tour.ref+" as "+esc(it.review.reviewerName)+
+          ". Everything that happened — the question, the tier, the verdict, your signature — is in the append-only trail below, downloadable as JSON. That is the difference between a chatbot and a governed system: the conversation was the shortest part.",
+          '<button class="btn sm" id="tourNext">Finish</button>');
+        const n=$("tourNext");if(n)n.addEventListener("click",tourStop);
+      }
+    },700);
+    return;
+  }
+}
+function tourStart(){
+  tourStop();
+  location.hash="#/ask";
+  $("q").value=TOUR_QUESTION;
+  $("governed").checked=true;$("govLabel").textContent="Governance ON";$("govLabel").className="";
+  currentAsk=runAsk(TOUR_QUESTION,true);
+  renderAsk(null);
+  tour.recordId=currentAsk.recordId;tour.ref=currentAsk.record.decisionRef;tour.step=1;
+  tourBar("STEP 1 OF 4 · THE QUESTION",
+    "You just asked the governed assistant a real question. It answered only from the playbook and scored its own confidence: <strong>"+
+    currentAsk.record.confidenceTier+"</strong> (relevance "+currentAsk.record.topRelevance.toFixed(2)+
+    "). A chatbot would stop here. Governance is just getting started.",
+    '<button class="btn sm" id="tourNext">Send it through the gate →</button>'+exitBtn);
+  bindTour();window.scrollTo(0,0);
+}
+$("tourBtn").addEventListener("click",tourStart);
+
+/* ----- production day: volume through the same gate, humans on the exceptions ----- */
+function dayRecords(){
+  const mk=o=>Object.assign({
+    decisionRef:"DAY-"+Math.random().toString(36).slice(2,7).toUpperCase(),
+    question:"",answer:"",claims:[],citations:[],confidenceTier:"High",topRelevance:7.5,
+    riskLevel:"moderate",approver:"R. Okafor",approverRole:"Service Owner",
+    disclosures:["confidence","sources","review_status"],refused:false,refusalReason:null,governed:true},o);
+  const topics=[
+   ["Who declares an incident and who commands it?","An incident is declared by any on-call engineer; the declaring engineer becomes the Incident Commander until formally handed off.","4.2 Incident Response"],
+   ["What does release sign-off require?","Sign-off requires a passing verification run, an approved rollback plan, and confirmation that no unresolved high-risk items are open.","5.2 Release Sign-Off"],
+   ["How are vendor services reviewed?","A third-party service is reviewed before first production use and annually thereafter, covering support terms and exit path.","8.1 Vendor and Third-Party Review"],
+   ["Where may records with personal information live?","Records containing personal information are stored only in approved systems and are never copied into working documents.","7.1 Data Handling"],
+   ["How does work enter the group?","All work enters through a single intake queue and is triaged with a service, an impact class, and an initial risk level.","3.1 Intake and Triage"],
+  ];
+  const out=[];const R=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+  const push=(n,f)=>{for(let i=0;i<n;i++)out.push(f(topics[i%topics.length]));};
+  push(R(140,155),t=>mk({question:t[0],answer:t[1],citations:[t[2]],
+    claims:[{text:t[1],sourceIds:[t[2]]}]}));                                          /* clean -> PASS */
+  push(R(10,14),t=>mk({refused:true,confidenceTier:"Insufficient",topRelevance:0.4,
+    question:"Out-of-scope variant: "+t[0],answer:"This is not covered in the playbook.",
+    approver:null,approverRole:null,refusalReason:"Below the refusal threshold."}));   /* refusal -> PASS, counted as refused */
+  push(R(10,13),t=>mk({confidenceTier:"Moderate",topRelevance:3.4,question:t[0],
+    answer:t[1]+" A renewal review is recommended within 2–4 weeks.",citations:[t[2]],
+    claims:[{text:"A renewal review is recommended within 2–4 weeks.",sourceIds:[t[2]]}]})); /* REVIEW: tier routing */
+  push(R(4,7),t=>mk({confidenceTier:"Low",topRelevance:1.8,question:t[0],
+    answer:"The measure sits at 4 incidents this quarter.",citations:[t[2]],
+    claims:[{text:"The measure sits at 4 incidents this quarter.",sourceIds:[t[2]]}]}));    /* REVIEW: false precision */
+  push(R(3,5),t=>mk({disclosures:["confidence"],question:t[0],answer:t[1],
+    citations:[t[2]],claims:[{text:t[1],sourceIds:[t[2]]}]}));                          /* REVIEW: missing disclosures */
+  push(R(5,7),t=>mk({question:t[0],answer:"Overhead drops by 23% if we consolidate.",
+    claims:[{text:"Overhead drops by 23% if we consolidate.",sourceIds:[]}]}));         /* BLOCK: unsourced figure */
+  push(R(3,5),t=>mk({question:t[0],answer:t[1],citations:["EV-914"],
+    claims:[{text:t[1],sourceIds:["EV-914"]}]}));                                       /* BLOCK: fabricated citation */
+  push(R(3,5),t=>mk({riskLevel:"high",approver:null,approverRole:null,question:t[0],
+    answer:t[1],citations:[t[2]],claims:[{text:t[1],sourceIds:[t[2]]}]}));              /* BLOCK: high risk, no approver */
+  for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));
+    const tmp=out[i];out[i]=out[j];out[j]=tmp;}
+  return out;
+}
+let sim={running:false};
+function runDay(){
+  if(sim.running)return;
+  sim.running=true;tourStop();sim.running=true;
+  const recs=dayRecords();
+  audit("production_day_started",{decisions:recs.length});
+  const tally={n:0,PASS:0,REVIEW:0,BLOCK:0,refused:0};
+  const passIds=[];let idx=0;
+  const step=()=>{
+    if(!sim.running)return;
+    const end=Math.min(idx+8,recs.length);
+    for(;idx<end;idx++){
+      const r=recs[idx];const id=saveRecord(r);const g=runGateOn(id,r);
+      tally.n++;tally[g.verdict]++;if(r.refused)tally.refused++;
+      if(g.verdict==="PASS"&&!r.refused)passIds.push(id);
+    }
+    if(idx<recs.length){
+      tourBar("PRODUCTION DAY · THE GATE RUNS ON EVERYTHING",
+        "Processed <strong>"+tally.n+"</strong> of "+recs.length+" decisions — "+tally.PASS+
+        " auto-cleared · "+tally.REVIEW+" routed to humans · "+tally.BLOCK+" blocked at source · "+
+        tally.refused+" refused. No human has touched anything yet.",
+        '<button class="btn ghost sm" id="tourExit">Stop</button>');
+      const x=$("tourExit");if(x)x.addEventListener("click",()=>{sim.running=false;tourStop();});
+      setTimeout(step,140);
+    }else{
+      const k=Math.max(3,Math.round(passIds.length*0.05));const sampled=[];
+      for(let i=0;i<k&&passIds.length;i++){
+        const j=Math.floor(Math.random()*passIds.length);sampled.push(passIds.splice(j,1)[0]);}
+      sampled.forEach(id=>updateRecord(id,it=>{it.qaSample=true;}));
+      audit("qa_sampling_completed",{sampled:sampled.length,of:tally.PASS,
+        policy:"5% of auto-cleared decisions pulled for retrospective audit — the automation must keep earning its autonomy"});
+      const stp=Math.round(tally.PASS/tally.n*100);
+      tourBar("PRODUCTION DAY · COMPLETE",
+        tally.n+" decisions · <strong>"+stp+"% straight-through</strong> ("+tally.PASS+" auto-cleared) · "+
+        tally.REVIEW+" queued for a named human · "+tally.BLOCK+" blocked at source · "+tally.refused+
+        " refused before drafting · "+sampled.length+" of the auto-cleared sampled for retrospective QA. "+
+        "The gate touched everything; people touch the exceptions.",
+        '<button class="btn sm" id="tourNext">Work the queue →</button><button class="btn ghost sm" id="tourExit">Done</button>');
+      const n=$("tourNext");if(n)n.addEventListener("click",()=>{tourStop();location.hash="#/review";});
+      const x=$("tourExit");if(x)x.addEventListener("click",tourStop);
+      sim.running=false;
+      if(location.hash.replace(/^#/,"")==="/dashboard")renderDashboard();
+      if(location.hash.replace(/^#/,"")==="/review")renderReview();
+    }
+  };
+  step();
+}
+$("simBtn").addEventListener("click",runDay);
+
+/* ----- init ----- */
+renderRecTabs();renderEditor();route();
+</script>
+</body>
+</html>
