@@ -105,6 +105,14 @@
   .qrow .qn{font-family:var(--mono);font-size:.95rem;font-weight:700;color:var(--primary);min-width:1.4em;}
   .qrow .qt{font-weight:650;} .qrow .qd{color:var(--muted);font-size:.85rem;margin-top:3px;}
   .qrow a.qlink{font-family:var(--mono);font-size:.75rem;white-space:nowrap;}
+  .tourbar{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--surface);
+    border-top:2px solid var(--primary);box-shadow:0 -8px 26px rgba(0,0,0,.4);}
+  .tb-in{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:13px 20px;max-width:1100px;margin:0 auto;}
+  .tb-step{font-family:var(--mono);font-size:.68rem;font-weight:700;letter-spacing:.12em;color:var(--primary);white-space:nowrap;}
+  .tb-text{flex:1;font-size:.85rem;color:var(--fg);min-width:260px;}
+  .tb-btns{display:flex;gap:8px;flex-wrap:wrap;}
+  .btn.sm{padding:7px 12px;font-size:.8rem;}
+  body.touring{padding-bottom:110px;}
 </style>
 </head>
 <body>
@@ -140,9 +148,13 @@
       no backend, no build step, no external services, no model in the loop. Every behavior on every page is
       deterministic code running in your browser. Open it from a file share or host it as one static page.</p>
     <div style="margin-top:22px;display:flex;gap:10px;flex-wrap:wrap;">
-      <a class="btn" href="#/ask">Run the governed assistant</a>
+      <button class="btn" id="tourBtn">Follow one answer through the loop</button>
+      <button class="btn ghost" id="simBtn">Simulate a production day</button>
+      <a class="btn ghost" href="#/ask">Run the governed assistant</a>
       <a class="btn ghost" href="#/gate">Break the gate on purpose</a>
     </div>
+    <p class="xs mut" style="margin-top:10px;">The 90-second version: ask → verdict → <em>your</em> sign-off → the audit trail. You play the human in the loop.
+      The production day streams ~200 decisions through the same gate — automation does the routine; you work the exceptions.</p>
   </div>
 
   <div class="grid3" style="margin-top:34px;" id="stages"></div>
@@ -747,6 +759,8 @@ function renderReview(){
   const blocked=s.records.filter(r=>r.verdict==="BLOCK");
   let html="";
   if(!queue.length)html+='<p class="sm mut" style="margin-top:20px;">Nothing awaiting sign-off. Run a Moderate-confidence record through the gate to fill this queue.</p>';
+  else html+='<p class="sm mut" style="margin-top:20px;"><strong style="color:var(--fg)">'+queue.length+
+    '</strong> item(s) awaiting a named sign-off. In a production shop this is the exception lane — the gate cleared the routine work without you.</p>';
   queue.forEach(item=>{
     const fails=item.controls.filter(c=>!c.passed).map(c=>
       '<li class="xs t-review">'+c.name+": "+esc(c.detail)+"</li>").join("");
@@ -794,10 +808,14 @@ function renderDashboard(){
    stat("Routed (REVIEW)",count("REVIEW"),signOffs+" signed off")+
    stat("Stopped (BLOCK)",count("BLOCK"),pct(count("BLOCK"),evaluated.length))+
    stat("Refusal rate",pct(refusals,items.length),refusals+" question(s) refused before drafting")+
+   stat("Sampled for QA",items.filter(i=>i.qaSample).length,"Auto-cleared decisions pulled for retrospective audit")+
    stat("Audit events",s.audit.length,"Append-only; every step is attributable");
+  const TRAIL_CAP=60;
+  const trailNote=items.length>TRAIL_CAP?
+   '<p class="xs mut" style="margin-top:8px;">Showing the latest '+TRAIL_CAP+' of '+items.length+' decisions — the full set is in the JSON download.</p>':"";
   $("trail").innerHTML=items.length===0?
    '<p class="sm mut" style="margin-top:10px;">No decisions yet. Start on the Ask or Gate page.</p>':
-   items.slice().reverse().map(item=>
+   trailNote+items.slice(-TRAIL_CAP).reverse().map(item=>
     '<div class="rowbox"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">'+
      '<span class="mono-xs" style="color:var(--primary);">'+item.record.decisionRef+"</span><span>"+
      (!item.record.governed?'<span class="mono-xs t-block" style="margin-right:8px;">UNGOVERNED</span>':"")+
@@ -805,9 +823,13 @@ function renderDashboard(){
      '<p class="sm" style="margin:8px 0 0;">'+esc(item.record.question)+"</p>"+
      '<p class="xs mut" style="margin:4px 0 0;">'+item.record.confidenceTier+" confidence · relevance "+
      item.record.topRelevance.toFixed(2)+" · "+item.record.citations.length+" citation(s)"+
-     (item.review?" · "+item.review.action+" by "+esc(item.review.reviewerName):"")+"</p></div>").join("");
+     (item.review?" · "+item.review.action+" by "+esc(item.review.reviewerName):"")+
+     (item.qaSample?' · <span class="t-review">QA SAMPLE</span>':"")+"</p></div>").join("");
+  const AUDIT_CAP=120;
+  const auditNote=s.audit.length>AUDIT_CAP?
+   '<p class="xs mut" style="margin-bottom:6px;">Showing the latest '+AUDIT_CAP+' of '+s.audit.length+' events — the full trail is in the JSON download.</p>':"";
   $("audit").innerHTML=s.audit.length===0?'<p class="sm mut">No events yet.</p>':
-   s.audit.slice().reverse().map(ev=>
+   auditNote+s.audit.slice(-AUDIT_CAP).reverse().map(ev=>
     '<div class="audit-line"><span class="mut">'+new Date(ev.createdAt).toLocaleTimeString()+
     '</span><span style="color:var(--primary);">'+ev.eventType+'</span><span class="mut">'+
     esc(JSON.stringify(ev.detail))+"</span></div>").join("");
@@ -838,6 +860,159 @@ $("controlMap").innerHTML=CONTROL_CATALOG.map(c=>
   '<p class="xs mut" style="margin:5px 0 0;">'+c.checks+"</p>"+
   '<p class="mono-xs mut" style="margin:6px 0 0;opacity:.7;">'+c.repoFile+"</p>"+
   '<p class="mono-xs mut" style="margin:2px 0 0;opacity:.7;">'+c.repoTest+"</p></div>").join("");
+
+/* ----- guided tour: follow one answer through the loop ----- */
+const TOUR_QUESTION="Should we accept the open exit-path risk for the reporting vendor?";
+let tour={step:0,recordId:null,ref:null,verdict:null,pollId:null};
+function tourStop(){
+  tour.step=0;if(tour.pollId){clearInterval(tour.pollId);tour.pollId=null;}
+  const el=$("tourbar");if(el)el.remove();document.body.classList.remove("touring");
+}
+function tourBar(step,text,btns){
+  let el=$("tourbar");
+  if(!el){el=document.createElement("div");el.id="tourbar";el.className="tourbar";document.body.appendChild(el);}
+  document.body.classList.add("touring");
+  el.innerHTML='<div class="tb-in"><span class="tb-step">'+step+'</span><span class="tb-text">'+text+
+    '</span><span class="tb-btns">'+btns+'</span></div>';
+}
+const exitBtn='<button class="btn ghost sm" id="tourExit">Exit tour</button>';
+function bindTour(){ const x=$("tourExit");if(x)x.addEventListener("click",tourStop);
+  const n=$("tourNext");if(n)n.addEventListener("click",tourAdvance); }
+function tourAdvance(){
+  if(tour.step===1){ /* run the gate on the tour record, stay on Ask so the verdict is visible */
+    const g=runGateOn(tour.recordId,currentAsk.record);renderAsk(g);tour.verdict=g.verdict;
+    tour.step=2;
+    tourBar("STEP 2 OF 4 · THE VERDICT",
+      tour.verdict==="REVIEW"
+      ?"The gate returned <strong>REVIEW</strong> — a Moderate-confidence answer may not act on its own. It is now queued for a named human. That queue is not a formality; it is the point."
+      :"The gate returned <strong>"+tour.verdict+"</strong>. Every control's reasoning is on screen — same record, same verdict, every time.",
+      '<button class="btn sm" id="tourNext">Meet the human →</button>'+exitBtn);
+    bindTour();window.scrollTo(0,0);return;
+  }
+  if(tour.step===2){ /* go to review; the human is the visitor */
+    tour.step=3;location.hash="#/review";
+    tourBar("STEP 3 OF 4 · THE HUMAN IS YOU",
+      "Item <span class='mono-xs' style='color:var(--primary)'>"+tour.ref+"</span> is waiting. Enter <em>your</em> name, <em>your</em> role, and your reasons — then approve or reject it. Nothing proceeds until you decide. This is what human-in-the-loop means: a named person, with authority, on the record.",
+      exitBtn);
+    bindTour();
+    tour.pollId=setInterval(()=>{
+      const it=store().records.find(r=>r.recordId===tour.recordId);
+      if(it&&it.review){clearInterval(tour.pollId);tour.pollId=null;tour.step=4;
+        location.hash="#/dashboard";
+        tourBar("STEP 4 OF 4 · THE PROOF",
+          "Done — you just "+it.review.action+" "+tour.ref+" as "+esc(it.review.reviewerName)+
+          ". Everything that happened — the question, the tier, the verdict, your signature — is in the append-only trail below, downloadable as JSON. That is the difference between a chatbot and a governed system: the conversation was the shortest part.",
+          '<button class="btn sm" id="tourNext">Finish</button>');
+        const n=$("tourNext");if(n)n.addEventListener("click",tourStop);
+      }
+    },700);
+    return;
+  }
+}
+function tourStart(){
+  tourStop();
+  location.hash="#/ask";
+  $("q").value=TOUR_QUESTION;
+  $("governed").checked=true;$("govLabel").textContent="Governance ON";$("govLabel").className="";
+  currentAsk=runAsk(TOUR_QUESTION,true);
+  renderAsk(null);
+  tour.recordId=currentAsk.recordId;tour.ref=currentAsk.record.decisionRef;tour.step=1;
+  tourBar("STEP 1 OF 4 · THE QUESTION",
+    "You just asked the governed assistant a real question. It answered only from the playbook and scored its own confidence: <strong>"+
+    currentAsk.record.confidenceTier+"</strong> (relevance "+currentAsk.record.topRelevance.toFixed(2)+
+    "). A chatbot would stop here. Governance is just getting started.",
+    '<button class="btn sm" id="tourNext">Send it through the gate →</button>'+exitBtn);
+  bindTour();window.scrollTo(0,0);
+}
+$("tourBtn").addEventListener("click",tourStart);
+
+/* ----- production day: volume through the same gate, humans on the exceptions ----- */
+function dayRecords(){
+  const mk=o=>Object.assign({
+    decisionRef:"DAY-"+Math.random().toString(36).slice(2,7).toUpperCase(),
+    question:"",answer:"",claims:[],citations:[],confidenceTier:"High",topRelevance:7.5,
+    riskLevel:"moderate",approver:"R. Okafor",approverRole:"Service Owner",
+    disclosures:["confidence","sources","review_status"],refused:false,refusalReason:null,governed:true},o);
+  const topics=[
+   ["Who declares an incident and who commands it?","An incident is declared by any on-call engineer; the declaring engineer becomes the Incident Commander until formally handed off.","4.2 Incident Response"],
+   ["What does release sign-off require?","Sign-off requires a passing verification run, an approved rollback plan, and confirmation that no unresolved high-risk items are open.","5.2 Release Sign-Off"],
+   ["How are vendor services reviewed?","A third-party service is reviewed before first production use and annually thereafter, covering support terms and exit path.","8.1 Vendor and Third-Party Review"],
+   ["Where may records with personal information live?","Records containing personal information are stored only in approved systems and are never copied into working documents.","7.1 Data Handling"],
+   ["How does work enter the group?","All work enters through a single intake queue and is triaged with a service, an impact class, and an initial risk level.","3.1 Intake and Triage"],
+  ];
+  const out=[];const R=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+  const push=(n,f)=>{for(let i=0;i<n;i++)out.push(f(topics[i%topics.length]));};
+  push(R(140,155),t=>mk({question:t[0],answer:t[1],citations:[t[2]],
+    claims:[{text:t[1],sourceIds:[t[2]]}]}));                                          /* clean -> PASS */
+  push(R(10,14),t=>mk({refused:true,confidenceTier:"Insufficient",topRelevance:0.4,
+    question:"Out-of-scope variant: "+t[0],answer:"This is not covered in the playbook.",
+    approver:null,approverRole:null,refusalReason:"Below the refusal threshold."}));   /* refusal -> PASS, counted as refused */
+  push(R(10,13),t=>mk({confidenceTier:"Moderate",topRelevance:3.4,question:t[0],
+    answer:t[1]+" A renewal review is recommended within 2–4 weeks.",citations:[t[2]],
+    claims:[{text:"A renewal review is recommended within 2–4 weeks.",sourceIds:[t[2]]}]})); /* REVIEW: tier routing */
+  push(R(4,7),t=>mk({confidenceTier:"Low",topRelevance:1.8,question:t[0],
+    answer:"The measure sits at 4 incidents this quarter.",citations:[t[2]],
+    claims:[{text:"The measure sits at 4 incidents this quarter.",sourceIds:[t[2]]}]}));    /* REVIEW: false precision */
+  push(R(3,5),t=>mk({disclosures:["confidence"],question:t[0],answer:t[1],
+    citations:[t[2]],claims:[{text:t[1],sourceIds:[t[2]]}]}));                          /* REVIEW: missing disclosures */
+  push(R(5,7),t=>mk({question:t[0],answer:"Overhead drops by 23% if we consolidate.",
+    claims:[{text:"Overhead drops by 23% if we consolidate.",sourceIds:[]}]}));         /* BLOCK: unsourced figure */
+  push(R(3,5),t=>mk({question:t[0],answer:t[1],citations:["EV-914"],
+    claims:[{text:t[1],sourceIds:["EV-914"]}]}));                                       /* BLOCK: fabricated citation */
+  push(R(3,5),t=>mk({riskLevel:"high",approver:null,approverRole:null,question:t[0],
+    answer:t[1],citations:[t[2]],claims:[{text:t[1],sourceIds:[t[2]]}]}));              /* BLOCK: high risk, no approver */
+  for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));
+    const tmp=out[i];out[i]=out[j];out[j]=tmp;}
+  return out;
+}
+let sim={running:false};
+function runDay(){
+  if(sim.running)return;
+  sim.running=true;tourStop();sim.running=true;
+  const recs=dayRecords();
+  audit("production_day_started",{decisions:recs.length});
+  const tally={n:0,PASS:0,REVIEW:0,BLOCK:0,refused:0};
+  const passIds=[];let idx=0;
+  const step=()=>{
+    if(!sim.running)return;
+    const end=Math.min(idx+8,recs.length);
+    for(;idx<end;idx++){
+      const r=recs[idx];const id=saveRecord(r);const g=runGateOn(id,r);
+      tally.n++;tally[g.verdict]++;if(r.refused)tally.refused++;
+      if(g.verdict==="PASS"&&!r.refused)passIds.push(id);
+    }
+    if(idx<recs.length){
+      tourBar("PRODUCTION DAY · THE GATE RUNS ON EVERYTHING",
+        "Processed <strong>"+tally.n+"</strong> of "+recs.length+" decisions — "+tally.PASS+
+        " auto-cleared · "+tally.REVIEW+" routed to humans · "+tally.BLOCK+" blocked at source · "+
+        tally.refused+" refused. No human has touched anything yet.",
+        '<button class="btn ghost sm" id="tourExit">Stop</button>');
+      const x=$("tourExit");if(x)x.addEventListener("click",()=>{sim.running=false;tourStop();});
+      setTimeout(step,140);
+    }else{
+      const k=Math.max(3,Math.round(passIds.length*0.05));const sampled=[];
+      for(let i=0;i<k&&passIds.length;i++){
+        const j=Math.floor(Math.random()*passIds.length);sampled.push(passIds.splice(j,1)[0]);}
+      sampled.forEach(id=>updateRecord(id,it=>{it.qaSample=true;}));
+      audit("qa_sampling_completed",{sampled:sampled.length,of:tally.PASS,
+        policy:"5% of auto-cleared decisions pulled for retrospective audit — the automation must keep earning its autonomy"});
+      const stp=Math.round(tally.PASS/tally.n*100);
+      tourBar("PRODUCTION DAY · COMPLETE",
+        tally.n+" decisions · <strong>"+stp+"% straight-through</strong> ("+tally.PASS+" auto-cleared) · "+
+        tally.REVIEW+" queued for a named human · "+tally.BLOCK+" blocked at source · "+tally.refused+
+        " refused before drafting · "+sampled.length+" of the auto-cleared sampled for retrospective QA. "+
+        "The gate touched everything; people touch the exceptions.",
+        '<button class="btn sm" id="tourNext">Work the queue →</button><button class="btn ghost sm" id="tourExit">Done</button>');
+      const n=$("tourNext");if(n)n.addEventListener("click",()=>{tourStop();location.hash="#/review";});
+      const x=$("tourExit");if(x)x.addEventListener("click",tourStop);
+      sim.running=false;
+      if(location.hash.replace(/^#/,"")==="/dashboard")renderDashboard();
+      if(location.hash.replace(/^#/,"")==="/review")renderReview();
+    }
+  };
+  step();
+}
+$("simBtn").addEventListener("click",runDay);
 
 /* ----- init ----- */
 renderRecTabs();renderEditor();route();
