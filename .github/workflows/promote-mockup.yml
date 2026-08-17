@@ -1,0 +1,53 @@
+# Promote mockup to live
+#
+# What it does: copies guided-loop-mockup.html over index.html, commits, and pushes.
+# GitHub Pages then redeploys the live site automatically (usually within a minute).
+#
+# How to run it: repo -> Actions tab -> "Promote mockup to live" -> Run workflow.
+# You can type a short release note; it becomes part of the commit message.
+#
+# One-time setup if the push is rejected:
+#   Settings -> Actions -> General -> Workflow permissions -> "Read and write permissions"
+
+name: Promote mockup to live
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_note:
+        description: "Release note (what changed in this promotion)"
+        required: false
+        default: "no note provided"
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Verify the mockup file exists
+        run: |
+          if [ ! -f guided-loop-mockup.html ]; then
+            echo "::error::guided-loop-mockup.html not found - nothing to promote."
+            exit 1
+          fi
+
+      - name: Copy mockup over index.html
+        run: cp guided-loop-mockup.html index.html
+
+      - name: Commit and push (skips cleanly if live already matches the mockup)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "index.html already matches the mockup - nothing to promote."
+            exit 0
+          fi
+          git commit -m "Promote mockup to live: ${{ inputs.release_note }}" \
+                     -m "Promoted via GitHub Actions by ${{ github.actor }}."
+          git push

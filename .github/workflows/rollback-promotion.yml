@@ -1,0 +1,45 @@
+# Roll back last promotion
+#
+# What it does: finds the most recent "Promote mockup to live" commit and reverts it,
+# restoring index.html to what was live before that promotion. GitHub Pages redeploys.
+#
+# How to run it: repo -> Actions tab -> "Roll back last promotion" -> Run workflow.
+#
+# Notes:
+# - Only reverts the latest promotion. Run again to peel back the one before it.
+# - If index.html was hand-edited AFTER the promotion, the revert may conflict;
+#   the workflow stops safely and tells you instead of guessing.
+
+name: Roll back last promotion
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find and revert the most recent promotion commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          SHA=$(git log --grep="^Promote mockup to live" -1 --format=%H)
+          if [ -z "$SHA" ]; then
+            echo "::error::No promotion commit found - nothing to roll back."
+            exit 1
+          fi
+          echo "Reverting: $(git log -1 --format='%h %s' $SHA)"
+          if ! git revert --no-edit "$SHA"; then
+            git revert --abort || true
+            echo "::error::Revert conflicted (index.html changed since that promotion). No changes were pushed."
+            exit 1
+          fi
+          git push
