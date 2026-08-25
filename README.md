@@ -34,11 +34,9 @@ model, three components are deliberately simple:
 | Storage | Browser localStorage. Nothing leaves the page. |
 | Ungoverned baseline | A labeled deterministic simulation of an unconstrained answer, shown to illustrate the failure mode the gate prevents. |
 
-The seven controls are line-for-line ports of `gate.ts` from
-[`ai-governance-explorer`](https://github.com/framework-optimization-lab/ai-governance-explorer),
-which in turn implements the model enforced by
-[`ai-decision-governance-gate`](https://github.com/framework-optimization-lab/ai-decision-governance-gate)
-and the retrieval governance of
+The seven controls implement the governance model enforced by
+[`ai-decision-governance-gate`](https://github.com/framework-optimization-lab/ai-decision-governance-gate);
+the retrieval, confidence tiers, and refusal behavior follow the governance of
 [`governed-playbook-assistant`](https://github.com/framework-optimization-lab/governed-playbook-assistant).
 
 All data is fictional and domain-neutral. Clean-room demonstration only.
