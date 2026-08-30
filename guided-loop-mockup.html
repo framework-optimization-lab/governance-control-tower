@@ -427,16 +427,16 @@ function rankPassages(query,docs,k=4){
 const passageLabel=p=>p.section+" "+p.title;
 function tierForScore(s){return s<REFUSAL_THRESHOLD?"Insufficient":s>=HIGH_T?"High":s>=MOD_T?"Moderate":"Low";}
 
-/* ---------- the seven-control gate (port of gate.ts) ---------- */
+/* ---------- the seven-control gate (port of governance_gate.py :: evaluate) ---------- */
 const QUANT=/\d/, RANGE=/(\d[\d.,]*\s*(–|—|-|to)\s*\d)|±|approximately|roughly|between\s+\d/i;
 const CONTROL_CATALOG=[
- {id:"provenance_binding",name:"Provenance binding",severity:"block",checks:"Every quantitative claim cites at least one source.",repoFile:"governance_gate.py :: check_provenance_binding",repoTest:"test_governance.py :: test_unsourced_figure_blocks"},
- {id:"no_fabrication",name:"No fabrication",severity:"block",checks:"Every cited source exists in the evidence registry.",repoFile:"governance_gate.py :: check_no_fabrication",repoTest:"test_governance.py :: test_unknown_citation_blocks"},
- {id:"refusal",name:"Mandated refusal",severity:"block",checks:"An Insufficient confidence tier produces no figures at all.",repoFile:"governance_gate.py :: check_refusal",repoTest:"test_governance.py :: test_should_have_refused_blocks"},
- {id:"human_in_the_loop",name:"Human in the loop",severity:"block",checks:"High-risk decisions carry an explicit, named human sign-off.",repoFile:"governance_gate.py :: check_human_sign_off",repoTest:"test_governance.py :: test_high_risk_without_approver_blocks"},
- {id:"calibrated_confidence",name:"Calibrated confidence",severity:"review",checks:"No single-number false precision under a Moderate or Low tier.",repoFile:"governance_gate.py :: check_calibration",repoTest:"test_governance.py :: test_false_precision_warns"},
- {id:"tier_routing",name:"Confidence-tier routing",severity:"review",checks:"Moderate-confidence outputs route to expert review.",repoFile:"governance_gate.py :: check_tier_routing",repoTest:"test_governance.py :: test_moderate_tier_routes_to_review"},
- {id:"disclosures",name:"Output disclosures",severity:"review",checks:"Confidence, sources, and review status are all stated.",repoFile:"governance_gate.py :: check_disclosures",repoTest:"test_governance.py :: test_missing_disclosure_warns"},
+ {id:"provenance_binding",name:"Provenance binding",severity:"block",checks:"Every quantitative claim cites at least one source.",repoFile:"governance_gate.py :: evaluate() — provenance-binding rule",repoTest:"test_governance.py :: test_unsourced_quantitative_claim_blocks"},
+ {id:"no_fabrication",name:"No fabrication",severity:"block",checks:"Every cited source exists in the evidence registry.",repoFile:"governance_gate.py :: evaluate() — no-fabrication rule",repoTest:"test_governance.py :: test_hallucinated_source_blocks"},
+ {id:"refusal",name:"Mandated refusal",severity:"block",checks:"An Insufficient confidence tier produces no figures at all.",repoFile:"governance_gate.py :: evaluate() — refusal rule",repoTest:"test_governance.py :: test_insufficient_tier_must_refuse"},
+ {id:"human_in_the_loop",name:"Human in the loop",severity:"block",checks:"High-risk decisions carry an explicit, named human sign-off.",repoFile:"governance_gate.py :: evaluate() — human-in-the-loop gate",repoTest:"test_governance.py :: test_high_risk_requires_human_signoff"},
+ {id:"calibrated_confidence",name:"Calibrated confidence",severity:"review",checks:"No single-number false precision under a Moderate or Low tier.",repoFile:"governance_gate.py :: evaluate() — calibrated-confidence rule",repoTest:"test_governance.py :: test_false_precision_warns_under_moderate_tier"},
+ {id:"tier_routing",name:"Confidence-tier routing",severity:"review",checks:"Moderate-confidence outputs route to expert review.",repoFile:"governance_gate.py :: evaluate() — tier-routing rule",repoTest:"test_governance.py :: test_tier2_routes_to_review"},
+ {id:"disclosures",name:"Output disclosures",severity:"review",checks:"Confidence, sources, and review status are all stated.",repoFile:"governance_gate.py :: evaluate() — output-disclosures rule",repoTest:"test_governance.py :: test_missing_disclosure_warns"},
 ];
 const DISCLOSURE_KEYS=["confidence","sources","review_status"];
 const trunc=(t,m=90)=>t.length>m?t.slice(0,m)+"…":t;
