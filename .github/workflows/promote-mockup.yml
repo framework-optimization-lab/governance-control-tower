@@ -40,6 +40,10 @@ jobs:
         run: cp guided-loop-mockup.html index.html
 
       - name: Commit and push (skips cleanly if live already matches the mockup)
+        env:
+          # Passed via env so quotes/backticks in a typed note can't break
+          # (or be executed by) the shell command below.
+          RELEASE_NOTE: ${{ inputs.release_note }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -48,6 +52,6 @@ jobs:
             echo "index.html already matches the mockup - nothing to promote."
             exit 0
           fi
-          git commit -m "Promote mockup to live: ${{ inputs.release_note }}" \
+          git commit -m "Promote mockup to live: $RELEASE_NOTE" \
                      -m "Promoted via GitHub Actions by ${{ github.actor }}."
           git push
