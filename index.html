@@ -203,7 +203,7 @@
     relevant enough, the answer is refused <em>before</em> any drafting happens. Turn governance off to see the
     same question answered with confident, unsourced figures.</p>
   <p class="lede xs">In this self-contained build the drafting layer is <strong style="color:var(--fg)">extractive code, not a
-    model</strong> — answers are assembled from the retrieved passages themselves. The hosted edition swaps in a
+    model</strong> — answers are assembled from the retrieved passages themselves. A production deployment swaps in a
     language model for drafting; every control around it is identical.</p>
   <div class="govframe"><p class="gq">Governance question 1 — what is this system allowed to do?</p>
     <p>The boundary was set by a person, not learned by a model: the assistant may answer only from the
@@ -322,8 +322,8 @@
       <h2 class="mono-label">What the drafting layer does</h2>
       <ul class="plain sm mut">
         <li>Composes prose from retrieved passages only.</li>
-        <li>In the hosted edition this is a language model under instruction; here it is extractive code.</li>
-        <li>It never assigns a verdict, tier, citation or risk level — in either edition.</li>
+        <li>In a production deployment this is a language model under instruction; here it is extractive code.</li>
+        <li>It never assigns a verdict, tier, citation or risk level — in either case.</li>
       </ul>
     </div>
     <div class="card">
@@ -400,7 +400,7 @@ const SAMPLE_QUESTIONS = [
  "What is the share price forecast for next quarter?",
 ];
 
-/* ---------- retrieval: BM25, thresholds, tiers (port of retrieval.ts) ---------- */
+/* ---------- retrieval: BM25, thresholds, tiers (mirrors governed-playbook-assistant :: retriever.py + governance.py) ---------- */
 const STOP = new Set(["a","an","and","are","as","at","be","but","by","can","did","do","does","for","from","had","has","have","how","i","if","in","into","is","it","its","of","on","or","our","that","the","their","them","there","these","they","this","to","was","we","were","what","when","where","which","who","why","will","with","you","your"]);
 const REFUSAL_THRESHOLD = 1.0, HIGH_T = 6.0, MOD_T = 2.5;
 function tokenize(t){return t.toLowerCase().replace(/[^a-z0-9\s-]/g," ").split(/\s+/)
@@ -486,7 +486,7 @@ function evaluateGate(record,allowedSources){
 }
 const ALLOWED_SOURCES=[...EVIDENCE.map(e=>e.source_id),...PLAYBOOK.map(passageLabel)];
 
-/* ---------- sample decision records (port of samples.ts) ---------- */
+/* ---------- sample decision records (adapted from ai-decision-governance-gate :: config/sample_decisions.json) ---------- */
 const SAMPLE_RECORDS=[
  {label:"DEC-1001",expected:"PASS",note:"Sourced, tiered, ranged, human-approved, fully disclosed.",
   record:{decisionRef:"DEC-1001",question:"What is our current change failure rate, and is it inside tolerance?",
@@ -564,7 +564,7 @@ function saveRecord(record){
   save(s);return id;}
 function updateRecord(id,fn){const s=store();const it=s.records.find(r=>r.recordId===id);if(it)fn(it);save(s);}
 
-/* ---------- ask flow (port of engine.server.ts runAsk, model-free) ---------- */
+/* ---------- ask flow (model-free mirror of governed-playbook-assistant's retrieve → assess → draft pipeline) ---------- */
 function runAsk(question,governed){
   const passages=rankPassages(question,PLAYBOOK,4);
   const topRelevance=passages[0]?passages[0].score:0;
